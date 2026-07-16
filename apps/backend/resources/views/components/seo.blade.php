@@ -137,7 +137,3 @@
   <meta property="article:modified_time" content="{{ $modifiedTime }}">
   @endif
 @endif
-
-{{-- Preconnect --}}
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="dns-prefetch" href="https://fonts.gstatic.com">

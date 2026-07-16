@@ -1,5 +1,5 @@
 {{-- Service Locations — Premium Editorial — consistent design system (font scale & tokens) --}}
-<section class="lazy-section bg-[#f8fafc] relative overflow-hidden" id="locations" style="padding-top: clamp(72px, 8vw, 104px); padding-bottom: clamp(72px, 8vw, 104px); content-visibility: visible;">
+<section class="lazy-section bg-[#f8fafc] relative overflow-hidden" id="locations" style="padding-top: clamp(72px, 8vw, 104px); padding-bottom: clamp(72px, 8vw, 104px);">
   <div class="pointer-events-none absolute inset-0" aria-hidden="true">
     <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, rgba(15,23,42,0.05) 1px, transparent 0); background-size: 22px 22px;"></div>
     <div class="absolute -left-24 top-20 h-[320px] w-[320px] rounded-full bg-white blur-[64px] opacity-80"></div>

@@ -52,7 +52,8 @@
 
   /* --- 2) PARALLAX — rAF, progress based, reversible wheel --- */
   const parallaxEls = $('[data-parallax]');
-  if (parallaxEls.length){
+  const allowParallax = window.matchMedia('(min-width: 768px)').matches;
+  if (parallaxEls.length && allowParallax){
     let ticking = false;
     let vh = window.innerHeight;
     const items = parallaxEls.map(el=>{
@@ -75,9 +76,11 @@
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(()=>{
-        items.forEach(({el, speed, baseRotStr, baseRotNum, baseTx, baseRotateInline})=>{
+        // Read all geometry first, then write transforms. Mixing reads and
+        // writes per element forces repeated synchronous layout recalculation.
+        const measurements = items.map(item => ({ item, rect: item.el.getBoundingClientRect() }));
+        measurements.forEach(({item: {el, speed, baseRotStr, baseRotNum, baseTx, baseRotateInline}, rect})=>{
           if (el.closest && el.closest('.product-splide') && document.querySelector('.product-splide:hover')) return;
-          const rect = el.getBoundingClientRect();
           const center = rect.top + rect.height*0.5;
           const delta = vh*0.5 - center;
           const y = delta * speed * -0.35;

@@ -1,7 +1,6 @@
 {{-- Product Showcase — Gallery Premium + Splide.js --}}
 @php
   use App\Models\Product;
-  use Illuminate\Support\Facades\Cache;
   $products = Cache::remember('home_products', 3600, fn() => Product::where('published', true)->orderBy('sortOrder')->take(8)->get());
   if ($products->isEmpty()) {
     $products = collect([
@@ -20,19 +19,7 @@
     'name'=>$p->name,'slug'=>$p->slug,'image'=>$img($p->featuredImage) ?? '/uploads/hero-lanyard-slider-01.webp'
   ])->toArray();
   
-  $splideVer = Cache::remember('splide_assets_version', 86400, function () {
-      $splideCss = public_path('vendor/splide/splide.min.css');
-      $splideJs  = public_path('vendor/splide/splide.min.js');
-      return [
-          'vCss' => file_exists($splideCss) ? filemtime($splideCss) : 1,
-          'vJs' => file_exists($splideJs) ? filemtime($splideJs) : 1,
-      ];
-  });
-  $vCss = $splideVer['vCss'];
-  $vJs  = $splideVer['vJs'];
 @endphp
-
-<link rel="stylesheet" href="/vendor/splide/splide.min.css?v={{ $vCss }}" />
 
 <section class="lazy-section bg-white" id="products" style="padding-top: 96px; padding-bottom: 96px;">
   <div class="px-6 lg:px-10 max-w-[1280px] mx-auto">
@@ -51,11 +38,11 @@
     <div class="product-gallery-fade is-left" aria-hidden="true"></div>
     <div class="product-gallery-fade is-right" aria-hidden="true"></div>
 
-    <div id="product-splide" class="splide product-splide" aria-label="Galeri produk bisa di-swipe">
-      <div class="splide__track">
-        <ul class="splide__list">
+    <div id="product-gallery" class="product-splide" role="region" aria-label="Galeri produk, geser untuk melihat produk lainnya" tabindex="0">
+      <div class="product-gallery-track">
+        <ul class="product-gallery-list">
           @foreach($gallery as $g)
-          <li class="splide__slide product-slide">
+          <li class="product-slide">
             <a href="/produk/{{ $g['slug'] }}" class="product-card group" draggable="false">
               <div class="product-card-imgwrap">
                 <img src="{{ $g['image'] }}" alt="{{ $g['name'] }} - Lanyard custom Tangerang cetak premium berkualitas" class="product-card-img" width="400" height="500" loading="lazy" decoding="async" draggable="false" />
@@ -81,7 +68,6 @@
 </section>
 
 <style>
-  #products{ content-visibility: visible; }
   .product-gallery-wrap{
     position:relative;
     width:100%;
@@ -92,13 +78,20 @@
   /* Fase 4 fix FINAL: jarak title -> slider 30px exact (inline margin-bottom 30px di header) + top padding minimal untuk shadow */
   .product-splide{
     width:100%;
-    overflow:visible;
+    overflow-x:auto;
+    overflow-y:hidden;
     padding: 6px max(24px, calc((100vw - 1280px)/2 + 24px)) 32px max(24px, calc((100vw - 1280px)/2 + 24px));
     touch-action: pan-y;
     cursor: grab;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
+    scroll-snap-type:x proximity;
+    scrollbar-width:none;
+    overscroll-behavior-inline:contain;
   }
+  .product-splide::-webkit-scrollbar{ display:none; }
+  .product-gallery-track{ width:max-content; }
+  .product-gallery-list{ display:flex; align-items:stretch; gap:20px; }
   .product-splide.is-dragging{ cursor: grabbing; }
   @media(min-width:1024px){
     .product-splide{
@@ -107,15 +100,7 @@
     }
   }
   /* override splide defaults biar hover shadow gak kepotong */
-  .product-splide .splide__track{ overflow:visible !important; }
-  .product-splide .splide__list{
-    align-items:stretch;
-    will-change: transform;
-  }
-  .product-splide .splide__slide{
-    will-change: transform;
-  }
-  .product-slide{ width:272px; }
+  .product-slide{ width:272px; flex:0 0 auto; scroll-snap-align:start; }
   @media(min-width:640px){ .product-slide{ width:286px; } }
   @media(min-width:1024px){ .product-slide{ width:292px; } }
 
@@ -189,12 +174,11 @@
 
   @media(prefers-reduced-motion:reduce){
     .product-card, .product-card-img, .product-card-name, .product-card-arrow, .product-gallery-fade{ transition:none !important; }
-    .product-splide .splide__list{ transition:none !important; }
+    .product-gallery-list{ transition:none !important; }
   }
 </style>
 
-<script src="/vendor/splide/splide.min.js?v={{ $vJs }}"></script>
-<script>
+{{-- Legacy Splide implementation retained in source history; native CSS scrolling replaces it.
 (() => {
   const root = document.getElementById('product-splide');
   if(!root) return;
@@ -315,4 +299,4 @@
     requestAnimationFrame(() => { splide.refresh(); updateFades(); });
   });
 })();
-</script>
+--}}

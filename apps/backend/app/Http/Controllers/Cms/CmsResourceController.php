@@ -23,6 +23,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -491,6 +492,22 @@ class CmsResourceController extends Controller
                 continue;
             }
 
+            if ($keyword === '' || $url === '') {
+                throw ValidationException::withMessages([
+                    'seo_auto_link_keywords.'.$index => 'Keyword dan URL Auto Link harus diisi berpasangan.',
+                ]);
+            }
+
+            $isRelativeUrl = preg_match('#^/(?!/)[^\s]*$#u', $url) === 1;
+            $isHttpUrl = filter_var($url, FILTER_VALIDATE_URL)
+                && in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true);
+
+            if (! $isRelativeUrl && ! $isHttpUrl) {
+                throw ValidationException::withMessages([
+                    'seo_auto_link_urls.'.$index => 'Gunakan URL relatif seperti /produk atau URL lengkap http/https.',
+                ]);
+            }
+
             $seoLinks[] = [
                 'keyword' => $keyword,
                 'url' => $url,
@@ -521,6 +538,8 @@ class CmsResourceController extends Controller
         if (! empty($validated['delete_keys'])) {
             Setting::query()->whereIn('key', $validated['delete_keys'])->delete();
         }
+
+        Cache::forget('seo_auto_links_runtime');
 
         return redirect()
             ->route('cms.index', 'settings')

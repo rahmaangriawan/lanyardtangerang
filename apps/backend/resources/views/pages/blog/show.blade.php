@@ -32,7 +32,7 @@
   $readingTime = max(1, (int) ceil($wordCount / 200));
 
   // Pembuatan Daftar Isi (TOC) — hanya H2 & H3
-  $processedContent = function_exists('inject_auto_links') ? inject_auto_links($cleanContent) : $cleanContent;
+  $processedContent = \App\Support\AutoLinkSeo::apply($cleanContent);
   $toc = [];
   preg_match_all('/<h([2-6])([^>]*)>(.*?)<\/h\1>/is', $cleanContent, $matches, PREG_SET_ORDER);
 

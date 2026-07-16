@@ -64,10 +64,15 @@
         $appCssV = $assetsVersion['appCssV'];
         $srCssV = $assetsVersion['srCssV'];
         $srJsV = $assetsVersion['srJsV'];
+        $inlinePublicCss = \Illuminate\Support\Facades\Cache::remember(
+            'inline_public_css_'.$appCssV.'_'.$srCssV,
+            86400,
+            fn () => (file_get_contents(public_path('css/app.min.css')) ?: '')
+                .(file_get_contents(public_path('vendor/scroll/scroll-reveal.css')) ?: '')
+        );
     @endphp
-    <link rel="stylesheet" href="/css/app.min.css?v={{ $appCssV }}">
+    <style data-public-critical-css>{!! $inlinePublicCss !!}</style>
     {{-- Scroll Reveal — Mode A Vanilla Light --}}
-    <link rel="stylesheet" href="/vendor/scroll/scroll-reveal.css?v={{ $srCssV }}">
 
     {{-- Legacy sections support: blog show pakai @section('head') untuk article CSS (harus tetap dirender) --}}
     @hasSection('head')
@@ -83,7 +88,7 @@
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       /* Optimization: Lazy render offscreen sections — disable for first hero to allow reveal */
       .lazy-section { content-visibility: auto; contain-intrinsic-size: auto 500px; }
-      #hero, #client-logos-section, #trusted, #products, #services, #locations, #faq, #blog, #cta-section, #site-footer{ content-visibility: visible; }
+      #hero { content-visibility: visible; }
       /* Pre-allocate logo space to prevent CLS */
       .site-header__logo img { aspect-ratio: 4/1; object-fit: contain; }
     </style>

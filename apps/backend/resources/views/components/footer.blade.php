@@ -15,7 +15,7 @@
 
     {{-- Informasi --}}
     <div class="md:col-span-1">
-      <h4 class="text-xs font-bold text-slate-300 uppercase tracking-widest mb-5">Informasi</h4>
+      <h2 class="text-xs font-bold text-slate-300 uppercase tracking-widest mb-5">Informasi</h2>
       <ul class="space-y-3">
         <li><a href="/cara-pemesanan" class="text-slate-400 hover:text-white transition-colors text-sm">Cara Pemesanan Lanyard Custom</a></li>
         <li><a href="/daftar-harga" class="text-slate-400 hover:text-white transition-colors text-sm">Daftar Harga Lanyard Tangerang</a></li>
@@ -26,7 +26,7 @@
 
     {{-- Layanan --}}
     <div class="md:col-span-1">
-      <h4 class="text-xs font-bold text-slate-300 uppercase tracking-widest mb-5">Layanan</h4>
+      <h2 class="text-xs font-bold text-slate-300 uppercase tracking-widest mb-5">Layanan</h2>
       <ul class="space-y-3">
         <li><a href="/produk" class="text-slate-400 hover:text-white transition-colors text-sm">Katalog Produk Lanyard</a></li>
         <li><a href="/kebijakan" class="text-slate-400 hover:text-white transition-colors text-sm">Privacy Policy</a></li>
@@ -37,7 +37,7 @@
 
     {{-- Kontak --}}
     <div class="md:col-span-1">
-      <h4 class="text-xs font-bold text-slate-300 uppercase tracking-widest mb-5">Kontak Kami</h4>
+      <h2 class="text-xs font-bold text-slate-300 uppercase tracking-widest mb-5">Kontak Kami</h2>
       <ul class="space-y-3">
         <li class="flex items-start gap-2.5">
           <span class="material-symbols-outlined text-slate-400 shrink-0 text-lg">pin_drop</span>

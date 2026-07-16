@@ -1,5 +1,5 @@
 {{-- Two‑column layout with contact card matching reference image — Fase 4: container only --}}
-<section class="lazy-section bg-white" id="faq" data-sr="fade" style="padding-top: clamp(64px, 8vw, 96px); padding-bottom: clamp(64px, 8vw, 96px); content-visibility: visible;">
+<section class="lazy-section bg-white" id="faq" data-sr="fade" style="padding-top: clamp(64px, 8vw, 96px); padding-bottom: clamp(64px, 8vw, 96px);">
   
   {{-- Header --}}
   <div class="px-6 lg:px-10 max-w-[1280px] mx-auto">

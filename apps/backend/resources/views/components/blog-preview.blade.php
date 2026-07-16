@@ -34,7 +34,7 @@
   };
 @endphp
 
-<section class="lazy-section blog-editorial bg-white" id="blog" data-sr="fade" style="content-visibility: visible; padding-top: clamp(72px, 8vw, 112px); padding-bottom: clamp(72px, 8vw, 112px);">
+<section class="lazy-section blog-editorial bg-white" id="blog" data-sr="fade" style="padding-top: clamp(72px, 8vw, 112px); padding-bottom: clamp(72px, 8vw, 112px);">
   <div class="px-6 lg:px-10 max-w-[1280px] mx-auto">
 
     <div class="blog-editorial-header">
