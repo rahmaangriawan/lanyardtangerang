@@ -10,6 +10,7 @@ use RuntimeException;
 final class GoogleSearchConsoleService
 {
     private const SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+    private const SEARCH_ANALYTICS_ENDPOINT = 'https://www.googleapis.com/webmasters/v3/sites/';
 
     public function fetch(): array
     {
@@ -35,7 +36,7 @@ final class GoogleSearchConsoleService
         $response = Http::withToken($token)
             ->acceptJson()
             ->timeout(25)
-            ->post('https://searchconsole.googleapis.com/v1/sites/' . rawurlencode($siteUrl) . '/searchAnalytics/query', [
+            ->post($this->searchAnalyticsUrl($siteUrl), [
                 'startDate' => Carbon::now()->subDays(29)->toDateString(),
                 'endDate' => Carbon::now()->toDateString(),
                 'dimensions' => ['date'],
@@ -45,9 +46,9 @@ final class GoogleSearchConsoleService
         if (! $response->successful()) {
             $status = $response->status();
             if ($status === 404) {
-                $msg = 'Situs \''.$siteUrl.'\' tidak ditemukan atau service account belum ditambahkan sebagai pengguna di Search Console. '
-                    .'Buka Google Search Console -> Settings -> Users and permissions, '
-                    .'tambahkan email: '.($credentials['client_email'] ?? '');
+                $msg = 'Property Search Console \''.$siteUrl.'\' tidak ditemukan oleh Google untuk service account '
+                    .($credentials['client_email'] ?? '').'. Pastikan nilainya sama persis dengan tipe property: '
+                    .'URL-prefix harus menyertakan protokol dan trailing slash, sedangkan Domain property memakai format sc-domain:domain.com.';
                 throw new RuntimeException($msg);
             }
             $message = $response->json('error.message') ?: $response->body() ?: 'Google Search Console API tidak dapat diakses.';
@@ -108,6 +109,11 @@ final class GoogleSearchConsoleService
         $totals['impressions'] = array_sum(array_column($daily, 'impressions'));
 
         return compact('totals', 'daily');
+    }
+
+    private function searchAnalyticsUrl(string $siteUrl): string
+    {
+        return self::SEARCH_ANALYTICS_ENDPOINT.rawurlencode($siteUrl).'/searchAnalytics/query';
     }
 
     private function accessToken(array $credentials): string
