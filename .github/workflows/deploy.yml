@@ -81,13 +81,7 @@ jobs:
             cp "$APP_DIR/.env" "$STAGING_DIR/.env"
           fi
 
-          # Backup uploads
-          if [ -d "$APP_DIR/storage/app/public" ]; then
-            mkdir -p "$STAGING_DIR/storage/app"
-            cp -R "$APP_DIR/storage/app/public" "$STAGING_DIR/storage/app/" 2>/dev/null || true
-          fi
-
-          # Sync
+          # Sync aplikasi tanpa menghapus upload yang dibuat dari CMS produksi.
           mkdir -p "$APP_DIR"
           rsync -r --checksum --delete \
             --no-times --no-perms --no-owner --no-group --omit-dir-times \
@@ -97,6 +91,22 @@ jobs:
             --exclude 'public/storage/' \
             --exclude 'publicimagestrust/' \
             "$STAGING_DIR/" "$APP_DIR/"
+
+          # Deploy aset bawaan repo secara non-destruktif. Folder ini sengaja
+          # dikecualikan dari rsync --delete agar upload produksi tetap aman.
+          if [ -d "$STAGING_DIR/public/uploads" ]; then
+            mkdir -p "$APP_DIR/public/uploads"
+            rsync -r --checksum \
+              --no-times --no-perms --no-owner --no-group --omit-dir-times \
+              "$STAGING_DIR/public/uploads/" "$APP_DIR/public/uploads/"
+          fi
+
+          if [ -d "$STAGING_DIR/storage/app/public/uploads" ]; then
+            mkdir -p "$APP_DIR/storage/app/public/uploads"
+            rsync -r --checksum \
+              --no-times --no-perms --no-owner --no-group --omit-dir-times \
+              "$STAGING_DIR/storage/app/public/uploads/" "$APP_DIR/storage/app/public/uploads/"
+          fi
 
           rm -rf "$STAGING_DIR"
 
@@ -123,6 +133,12 @@ jobs:
           $PHP_BIN artisan storage:link --force || true
 
           chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
+          # Gagalkan deploy jika aset penting tidak sampai ke document root.
+          test -f public/uploads/lanyardtangerang-logo-header.webp
+          test -f public/uploads/hero-lanyard-slider-01.webp
+          test -f public/uploads/cta-bg.webp
+          test -f storage/app/public/uploads/blog-import/rayakan-kemenangan-dengan-custom-lanyard-lebaran-unik-ini-01-9ju4eg.webp
 
           echo "DONE: Deploy Lanyard Tangerang selesai — $(date)"
           REMOTE_SCRIPT
