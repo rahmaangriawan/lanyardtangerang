@@ -50,7 +50,7 @@
 
     {{-- Bundled CSS: Tailwind + colors + global + header + hero + fonts (minified) --}}
     @php
-        $assetsVersion = \Illuminate\Support\Facades\Cache::remember('assets_version_hashes', 86400, function () {
+        $assetsVersion = \Illuminate\Support\Facades\Cache::remember('assets_version_hashes_v2', 86400, function () {
             $appCssPath = public_path('css/app.min.css');
             $srCssPath = public_path('vendor/scroll/scroll-reveal.css');
             $srJsPath = public_path('vendor/scroll/scroll-reveal.js');
@@ -64,7 +64,7 @@
         $srCssV = $assetsVersion['srCssV'];
         $srJsV = $assetsVersion['srJsV'];
         $inlinePublicCss = \Illuminate\Support\Facades\Cache::remember(
-            'inline_public_css_'.$appCssV.'_'.$srCssV,
+            'inline_public_css_v2_'.$appCssV.'_'.$srCssV,
             86400,
             fn () => (file_get_contents(public_path('css/app.min.css')) ?: '')
                 .(file_get_contents(public_path('vendor/scroll/scroll-reveal.css')) ?: '')
