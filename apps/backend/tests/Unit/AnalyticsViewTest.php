@@ -12,9 +12,9 @@ class AnalyticsViewTest extends TestCase
         view()->share('errors', new ViewErrorBag);
 
         $daily = [
+            ['date' => '2026-07-16', 'activeUsers' => 15, 'pageViews' => 37],
             ['date' => '2026-07-14', 'activeUsers' => 12, 'pageViews' => 25],
             ['date' => '2026-07-15', 'activeUsers' => 18, 'pageViews' => 42],
-            ['date' => '2026-07-16', 'activeUsers' => 15, 'pageViews' => 37],
         ];
 
         $html = view('cms.utility', [
@@ -44,5 +44,6 @@ class AnalyticsViewTest extends TestCase
         $this->assertStringContainsString('/blog/test', $html);
         $this->assertGreaterThanOrEqual(2, substr_count($html, 'class="analytics-chart"'));
         $this->assertGreaterThanOrEqual(4, substr_count($html, '<polyline'));
+        $this->assertLessThan(strpos($html, '2026-07-16: 15 pengguna'), strpos($html, '2026-07-14: 12 pengguna'));
     }
 }

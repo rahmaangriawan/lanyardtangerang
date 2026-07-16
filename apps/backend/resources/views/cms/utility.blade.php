@@ -3,8 +3,8 @@
 @section('title', $title)
 
 @php
-    $gaDaily = collect($gaData['daily'] ?? [])->filter(fn ($row) => filled($row['date'] ?? null))->values();
-    $gscDaily = collect($gscData['daily'] ?? [])->filter(fn ($row) => filled($row['date'] ?? null))->values();
+    $gaDaily = collect($gaData['daily'] ?? [])->filter(fn ($row) => filled($row['date'] ?? null))->sortBy('date')->values();
+    $gscDaily = collect($gscData['daily'] ?? [])->filter(fn ($row) => filled($row['date'] ?? null))->sortBy('date')->values();
     $topPages = collect($gaData['topPages'] ?? [])->take(8);
     $maxPageViews = max(1, (int) ($topPages->max('views') ?? 1));
 @endphp
