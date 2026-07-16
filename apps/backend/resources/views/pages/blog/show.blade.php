@@ -37,23 +37,27 @@
   // Pembuatan Daftar Isi (TOC) — hanya H2 & H3
   $processedContent = function_exists('inject_auto_links') ? inject_auto_links($cleanContent) : $cleanContent;
   $toc = [];
-  preg_match_all('/<h([23])([^>]*)>(.*?)<\/h\1>/is', $cleanContent, $matches, PREG_SET_ORDER);
+  preg_match_all('/<h([2-6])([^>]*)>(.*?)<\/h\1>/is', $cleanContent, $matches, PREG_SET_ORDER);
 
   if (count($matches) >= 2) {
       $index = 0;
-      $processedContent = preg_replace_callback('/<h([23])([^>]*)>(.*?)<\/h\1>/is', function($match) use (&$toc, &$index) {
-          $level = (int)$match[1];
+      $processedContent = preg_replace_callback('/<h([2-6])([^>]*)>(.*?)<\/h\1>/is', function($match) use (&$toc, &$index) {
+          $level = (int) $match[1];
           $attrs = $match[2];
-          $text = strip_tags($match[3]);
-          if (!trim($text)) return $match[0];
+          $text = trim(html_entity_decode(strip_tags($match[3]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+          if ($text === '') return $match[0];
 
-          // Generate ID unik untuk anchor link
-          $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $text), '-'));
+          // Gunakan ID yang sudah ada bila tersedia, lalu pastikan tetap unik.
+          preg_match('/\sid=["\']([^"\']+)["\']/i', $attrs, $idMatch);
+          $slug = \Illuminate\Support\Str::slug($idMatch[1] ?? $text);
+          $slug = $slug !== '' ? $slug : 'bagian-'.($index + 1);
           $baseSlug = $slug;
           $counter = 1;
-          while (in_array($slug, array_column($toc, 'slug'))) {
-              $slug = $baseSlug . '-' . $counter++;
+          while (in_array($slug, array_column($toc, 'slug'), true)) {
+              $slug = $baseSlug.'-'.$counter++;
           }
+
+          $attrs = preg_replace('/\s+id=["\'][^"\']*["\']/i', '', $attrs);
 
           $toc[] = [
               'level' => $level,
@@ -63,43 +67,68 @@
 
           $index++;
 
-          return "<h{$level} id=\"{$slug}\"{$attrs}>{$match[3]}</h{$level}>";
+          return '<h'.$level.' id="'.e($slug).'"'.$attrs.'>'.$match[3].'</h'.$level.'>';
       }, $processedContent);
 
       // Build TOC HTML — collapsible details
-      $tocHtml = '<details class="toc-container my-8 bg-slate-50 border border-slate-200/60 rounded-2xl p-5 sm:p-6 group" open>';
-      $tocHtml .= '<summary class="flex items-center justify-between cursor-pointer select-none list-none">';
-      $tocHtml .= '<div class="flex items-center gap-2">';
-      $tocHtml .= '<span class="material-symbols-outlined text-slate-700 text-lg">format_list_bulleted</span>';
-      $tocHtml .= '<span class="text-sm font-bold text-slate-900">Daftar Isi</span>';
-      $tocHtml .= '</div>';
-      $tocHtml .= '<span class="material-symbols-outlined text-slate-400 text-lg transition-transform group-open:rotate-180">expand_more</span>';
-      $tocHtml .= '</summary>';
-      $tocHtml .= '<nav class="mt-4 space-y-1.5 text-[15px]">';
+      $tocTree = [];
+      $tocStack = [];
 
-      foreach ($toc as $item) {
-          $indent = $item['level'] === 3 ? 'pl-4' : '';
-          $weight = $item['level'] === 2 ? 'font-semibold text-slate-800' : 'text-slate-600';
-          $tocHtml .= "<div class=\"{$indent}\">";
-          $tocHtml .= "<a href=\"#{$item['slug']}\" class=\"{$weight} hover:text-slate-900 transition-colors inline-flex items-center gap-2 py-0.5\">";
-          $tocHtml .= "<span class=\"w-1 h-1 rounded-full bg-slate-300 shrink-0\"></span>";
-          $tocHtml .= "<span>{$item['text']}</span>";
-          $tocHtml .= '</a>';
-          $tocHtml .= '</div>';
+      foreach ($toc as $tocItem) {
+          while (!empty($tocStack) && $tocStack[array_key_last($tocStack)]['level'] >= $tocItem['level']) {
+              array_pop($tocStack);
+          }
+
+          $node = ['item' => $tocItem, 'children' => []];
+
+          if (empty($tocStack)) {
+              $tocTree[] = $node;
+              $nodeIndex = array_key_last($tocTree);
+              $tocStack[] = ['level' => $tocItem['level'], 'node' => &$tocTree[$nodeIndex]];
+          } else {
+              $parentIndex = array_key_last($tocStack);
+              $parent = &$tocStack[$parentIndex]['node'];
+              $parent['children'][] = $node;
+              $nodeIndex = array_key_last($parent['children']);
+              $tocStack[] = ['level' => $tocItem['level'], 'node' => &$parent['children'][$nodeIndex]];
+              unset($parent);
+          }
       }
 
-      $tocHtml .= '</nav>';
+      $renderToc = function (array $nodes, int $depth = 0) use (&$renderToc): string {
+          $html = '<ol class="toc-list" data-depth="'.$depth.'">';
+
+          foreach ($nodes as $node) {
+              $item = $node['item'];
+              $html .= '<li class="toc-item">';
+              $html .= '<a href="#'.e($item['slug']).'" class="toc-link">';
+              $html .= '<span class="toc-marker" aria-hidden="true"></span>';
+              $html .= '<span>'.e($item['text']).'</span>';
+              $html .= '</a>';
+
+              if (!empty($node['children'])) {
+                  $html .= $renderToc($node['children'], $depth + 1);
+              }
+
+              $html .= '</li>';
+          }
+
+          return $html.'</ol>';
+      };
+
+      $tocHtml = '<details class="toc-container" open>';
+      $tocHtml .= '<summary class="toc-summary">';
+      $tocHtml .= '<span class="toc-summary__label">';
+      $tocHtml .= '<span class="material-symbols-outlined" aria-hidden="true">format_list_bulleted</span>';
+      $tocHtml .= '<span>Daftar Isi</span>';
+      $tocHtml .= '</span>';
+      $tocHtml .= '<span class="material-symbols-outlined toc-summary__chevron" aria-hidden="true">expand_more</span>';
+      $tocHtml .= '</summary>';
+      $tocHtml .= '<nav class="toc-nav" aria-label="Daftar isi artikel">'.$renderToc($tocTree).'</nav>';
       $tocHtml .= '</details>';
 
-      // Sisipkan TOC: sebelum H2 pertama, fallback ke H3 pertama
-      $firstH2Pos = strpos($processedContent, '<h2');
-      if ($firstH2Pos !== false) {
-          $processedContent = substr_replace($processedContent, $tocHtml, $firstH2Pos, 0);
-      } else {
-          $firstH3Pos = strpos($processedContent, '<h3');
-          if ($firstH3Pos !== false) {
-              $processedContent = substr_replace($processedContent, $tocHtml, $firstH3Pos, 0);
-          }
+      if (preg_match('/<h[2-6]\b/i', $processedContent, $firstHeading, PREG_OFFSET_CAPTURE)) {
+          $processedContent = substr_replace($processedContent, $tocHtml, $firstHeading[0][1], 0);
       }
   }
 @endphp
@@ -420,6 +449,99 @@
 
 @section('head')
 <style>
+  .article-content .toc-container {
+    margin: 2rem 0;
+    padding: 1.25rem 1.35rem;
+    border: 1px solid #DDE3EA;
+    border-radius: 1rem;
+    background: #F8FAFC;
+  }
+
+  .article-content .toc-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: #253141;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+
+  .article-content .toc-summary::-webkit-details-marker { display: none; }
+
+  .article-content .toc-summary__label {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    font-size: .9rem;
+    font-weight: 750;
+  }
+
+  .article-content .toc-summary__label .material-symbols-outlined,
+  .article-content .toc-summary__chevron {
+    font-size: 1.15rem;
+    color: #64748B;
+  }
+
+  .article-content .toc-summary__chevron { transition: transform .2s ease; }
+  .article-content .toc-container[open] .toc-summary__chevron { transform: rotate(180deg); }
+  .article-content .toc-nav { margin-top: 1rem; }
+
+  .article-content .toc-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .article-content .toc-list .toc-list {
+    margin: .3rem 0 .25rem .45rem;
+    padding-left: 1rem;
+    border-left: 1px solid #D7DEE7;
+  }
+
+  .article-content .toc-item {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .article-content .toc-link,
+  .article-content .toc-link:hover {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    padding: .3rem 0;
+    color: #52647A !important;
+    font-size: .925rem;
+    font-weight: 500;
+    line-height: 1.5;
+    text-decoration: none !important;
+  }
+
+  .article-content .toc-list[data-depth="0"] > .toc-item > .toc-link {
+    color: #253141 !important;
+    font-weight: 700;
+  }
+
+  .article-content .toc-link:hover { color: #0F172A !important; }
+
+  .article-content .toc-marker {
+    width: .38rem;
+    height: .38rem;
+    margin-top: .52rem;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: #94A3B8;
+  }
+
+  .article-content .toc-list .toc-list .toc-marker {
+    width: .32rem;
+    height: .32rem;
+    border: 1px solid #94A3B8;
+    background: transparent;
+  }
+
   /* Article content typography — clean prose without @tailwindcss/typography */
   .article-content h2 {
     font-size: 1.5rem;
@@ -440,6 +562,20 @@
     line-height: 1.35;
   }
 
+  .article-content h4,
+  .article-content h5,
+  .article-content h6 {
+    color: #253141;
+    margin-top: 1.65rem;
+    margin-bottom: .5rem;
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  .article-content h4 { font-size: 1.1rem; }
+  .article-content h5,
+  .article-content h6 { font-size: 1rem; }
+
   .article-content p {
     margin-bottom: 1.25rem;
     color: #536B86;
@@ -452,20 +588,33 @@
   .article-content ul,
   .article-content ol {
     margin-bottom: 1.5rem;
-    padding-left: 1.5rem;
+    padding-left: 1.75rem;
   }
 
-  .article-content ul li {
+  .article-content li > ul,
+  .article-content li > ol {
+    margin-top: .45rem;
+    margin-bottom: .55rem;
+    padding-left: 1.35rem;
+  }
+
+  .article-content ul > li {
     list-style-type: disc;
     margin-bottom: 0.375rem;
     padding-left: 0.375rem;
   }
 
-  .article-content ol li {
+  .article-content ul ul > li { list-style-type: circle; }
+  .article-content ul ul ul > li { list-style-type: square; }
+
+  .article-content ol > li {
     list-style-type: decimal;
     margin-bottom: 0.375rem;
     padding-left: 0.375rem;
   }
+
+  .article-content ol ol > li { list-style-type: lower-alpha; }
+  .article-content ol ol ol > li { list-style-type: lower-roman; }
 
   .article-content li::marker {
     color: #98A8BA;
@@ -557,6 +706,14 @@
   @media (max-width: 640px) {
     .article-content { font-size: 1rem; }
     .article-content h2 { font-size: 1.375rem; }
+    .article-content .toc-container { padding: 1.1rem; }
+    .article-content .toc-list .toc-list { padding-left: .85rem; }
+    .article-content ul,
+    .article-content ol { padding-left: 1.5rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .article-content .toc-summary__chevron { transition: none; }
   }
 </style>
 @endsection
