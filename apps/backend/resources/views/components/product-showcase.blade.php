@@ -81,13 +81,14 @@
     overflow-x:auto;
     overflow-y:hidden;
     padding: 6px max(24px, calc((100vw - 1280px)/2 + 24px)) 32px max(24px, calc((100vw - 1280px)/2 + 24px));
-    touch-action: pan-y;
+    touch-action:auto;
     cursor: grab;
     -webkit-tap-highlight-color: transparent;
     user-select:none;
     scroll-snap-type:x proximity;
     scrollbar-width:none;
     overscroll-behavior-inline:contain;
+    scroll-behavior:smooth;
   }
   .product-splide::-webkit-scrollbar{ display:none; }
   .product-gallery-track{ width:max-content; }
@@ -300,3 +301,90 @@
   });
 })();
 --}}
+
+<script>
+(() => {
+  const gallery = document.getElementById('product-gallery');
+  if (!gallery || gallery.dataset.sliderReady === 'true') return;
+  gallery.dataset.sliderReady = 'true';
+
+  const wrap = gallery.closest('.product-gallery-wrap');
+  const fadeLeft = wrap?.querySelector('.product-gallery-fade.is-left');
+  const fadeRight = wrap?.querySelector('.product-gallery-fade.is-right');
+  let frame = 0;
+  let dragging = false;
+  let moved = false;
+  let suppressClick = false;
+  let startX = 0;
+  let startScrollLeft = 0;
+
+  const updateFades = () => {
+    frame = 0;
+    const maxScroll = Math.max(0, gallery.scrollWidth - gallery.clientWidth);
+    fadeLeft?.classList.toggle('is-hidden', gallery.scrollLeft <= 2);
+    fadeRight?.classList.toggle('is-hidden', gallery.scrollLeft >= maxScroll - 2);
+  };
+
+  const scheduleFadeUpdate = () => {
+    if (!frame) frame = requestAnimationFrame(updateFades);
+  };
+
+  gallery.addEventListener('scroll', scheduleFadeUpdate, { passive: true });
+
+  gallery.addEventListener('pointerdown', (event) => {
+    if (event.pointerType === 'touch' || event.button !== 0) return;
+    dragging = true;
+    moved = false;
+    startX = event.clientX;
+    startScrollLeft = gallery.scrollLeft;
+    gallery.classList.add('is-dragging');
+    gallery.style.scrollSnapType = 'none';
+    gallery.setPointerCapture(event.pointerId);
+  });
+
+  gallery.addEventListener('pointermove', (event) => {
+    if (!dragging) return;
+    const distance = event.clientX - startX;
+    if (Math.abs(distance) > 4) moved = true;
+    gallery.scrollLeft = startScrollLeft - distance;
+    if (moved) event.preventDefault();
+  });
+
+  const stopDragging = (event) => {
+    if (!dragging) return;
+    dragging = false;
+    gallery.classList.remove('is-dragging');
+    gallery.style.removeProperty('scroll-snap-type');
+    if (gallery.hasPointerCapture(event.pointerId)) gallery.releasePointerCapture(event.pointerId);
+    if (moved) {
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 250);
+    }
+    scheduleFadeUpdate();
+  };
+
+  gallery.addEventListener('pointerup', stopDragging);
+  gallery.addEventListener('pointercancel', stopDragging);
+  gallery.addEventListener('lostpointercapture', () => {
+    dragging = false;
+    gallery.classList.remove('is-dragging');
+    gallery.style.removeProperty('scroll-snap-type');
+  });
+
+  gallery.addEventListener('click', (event) => {
+    if (!suppressClick) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+
+  gallery.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    const card = gallery.querySelector('.product-slide');
+    const step = (card?.getBoundingClientRect().width || 280) + 20;
+    gallery.scrollBy({ left: event.key === 'ArrowRight' ? step : -step, behavior: 'smooth' });
+  });
+
+  updateFades();
+})();
+</script>
