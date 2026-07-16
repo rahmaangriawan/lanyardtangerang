@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\AssetUrl;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,6 +21,16 @@ class Media extends Model
             'size' => 'integer',
             'createdAt' => 'datetime',
         ];
+    }
+
+    public function getUrlAttribute(?string $value): ?string
+    {
+        return AssetUrl::relative($value);
+    }
+
+    public function setUrlAttribute(?string $value): void
+    {
+        $this->attributes['url'] = AssetUrl::relative($value);
     }
 
     /**

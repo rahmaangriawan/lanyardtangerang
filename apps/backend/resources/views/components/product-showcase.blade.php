@@ -15,7 +15,7 @@
       (object) ['name'=>'Custom Print','slug'=>'custom-print','featuredImage'=>'/uploads/hero-lanyard-slider-02.webp'],
     ]);
   }
-  $img = fn($s) => $s ? preg_replace('/^https?:\/\/[^\/]+/', '', $s) : null;
+  $img = fn ($src) => \App\Support\AssetUrl::relative($src);
   $gallery = $products->values()->map(fn($p) => [
     'name'=>$p->name,'slug'=>$p->slug,'image'=>$img($p->featuredImage) ?? '/uploads/hero-lanyard-slider-01.webp'
   ])->toArray();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\AssetUrl;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -69,5 +70,15 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'ADMIN';
+    }
+
+    public function getAvatarAttribute(?string $value): ?string
+    {
+        return AssetUrl::relative($value);
+    }
+
+    public function setAvatarAttribute(?string $value): void
+    {
+        $this->attributes['avatar'] = AssetUrl::relative($value);
     }
 }

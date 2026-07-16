@@ -13,10 +13,23 @@ final class PublicApi
      */
     public static function settings(?array $keys = null): array
     {
-        return Setting::query()
+        $settings = Setting::query()
             ->when($keys, fn ($query) => $query->whereIn('key', $keys))
             ->pluck('value', 'key')
             ->all();
+
+        foreach (['site_logo', 'site_favicon', 'og_image', 'logo_url', 'favicon_url', 'site_logo_header', 'site_logo_mobile'] as $key) {
+            if (array_key_exists($key, $settings)) {
+                $fallback = str_contains($key, 'favicon')
+                    ? '/uploads/lanyardtangerang-favicon.webp'
+                    : (str_contains($key, 'header')
+                        ? '/uploads/lanyardtangerang-logo-header.webp'
+                        : (str_contains($key, 'mobile') ? '/uploads/lanyardtangerang-logo-mobile.webp' : '/uploads/lanyardtangerang-logo.webp'));
+                $settings[$key] = AssetUrl::relative($settings[$key], $fallback) ?? $fallback;
+            }
+        }
+
+        return $settings;
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\AssetUrl;
 use Illuminate\Database\Eloquent\Model;
 
 class Page extends Model
@@ -20,5 +21,15 @@ class Page extends Model
             'createdAt' => 'datetime',
             'updatedAt' => 'datetime',
         ];
+    }
+
+    public function getContentAttribute(?string $value): string
+    {
+        return AssetUrl::html($value);
+    }
+
+    public function setContentAttribute(?string $value): void
+    {
+        $this->attributes['content'] = AssetUrl::html($value);
     }
 }

@@ -117,10 +117,7 @@
     $hasMore = false;
   }
 
-  $img = function($src) {
-    if (!$src) return null;
-    return preg_replace('/^https?:\/\/[^\/]+/', '', $src);
-  };
+  $img = fn ($src) => \App\Support\AssetUrl::relative($src);
 @endphp
 
 {{-- Hero --}}

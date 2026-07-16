@@ -338,6 +338,9 @@
                           $type = $field['type'] ?? 'text';
                           $fallback = (string) ($field['fallback'] ?? ($type === 'color' ? '#6f4f43' : ''));
                           $value = $fieldValue($key, $fallback);
+                          if ($type === 'image') {
+                              $value = \App\Support\AssetUrl::relative($value, $fallback) ?? $fallback;
+                          }
                           $isWide = in_array($type, ['textarea', 'credential', 'auto_links'], true);
                       @endphp
 

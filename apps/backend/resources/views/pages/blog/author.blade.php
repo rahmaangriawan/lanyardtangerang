@@ -15,10 +15,7 @@
 
 @section('content')
 @php
-  $img = function($src) {
-    if (!$src) return null;
-    return preg_replace('/^https?:\/\/[^\/]+/', '', $src);
-  };
+  $img = fn ($src) => \App\Support\AssetUrl::relative($src);
   $displayName = isset($displayName) ? $displayName : ($author->name ?: 'Rama Angriawan');
   $isAdminFallback = isset($isAdminFallback) ? $isAdminFallback : false;
   try { $bioRaw = $author->bio; } catch (\Throwable $e) { $bioRaw = null; }

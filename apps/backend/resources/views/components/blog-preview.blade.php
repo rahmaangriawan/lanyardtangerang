@@ -15,11 +15,7 @@
     ]);
   }
 
-  $img = function($src) {
-    if (empty($src)) { return null; }
-    $out = preg_replace('/^https?:\/\/[^\/]+/', '', $src);
-    return $out;
-  };
+  $img = fn ($src) => \App\Support\AssetUrl::relative($src);
 
   $badge = function($name){
     $name = strtoupper(trim($name));

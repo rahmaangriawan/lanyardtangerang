@@ -103,10 +103,7 @@
 
 @section('content')
 @php
-  $imgHelper = function($src) {
-    if (!$src) return null;
-    return preg_replace('/^https?:\/\/[^\/]+/', '', $src);
-  };
+  $imgHelper = fn ($src) => \App\Support\AssetUrl::relative($src);
 
   $featImg = $imgHelper($product->featuredImage);
 

@@ -20,13 +20,10 @@
 
 @section('content')
 @php
-  $img = function($src) {
-    if (!$src) return null;
-    return preg_replace('/^https?:\/\/[^\/]+/', '', $src);
-  };
+  $img = fn ($src) => \App\Support\AssetUrl::relative($src);
   
   // Bersihkan hardcoded domain pada img src di dalam konten (contoh: localhost:8000 atau domain lama)
-  $cleanContent = preg_replace('/src="https?:\/\/[^\/]+\/(storage|uploads|images|media)/i', 'src="/$1', $post->content ?? '');
+  $cleanContent = \App\Support\AssetUrl::html($post->content ?? '');
 
   // Hapus widget "Bagikan artikel" bawaan dari hasil scraping
   $cleanContent = preg_replace('/<div[^>]*>\s*<p[^>]*>\s*Bagikan artikel\s*<\/p>[\s\S]*?<button[^>]*>[\s\S]*?<\/button>\s*<\/div>\s*<\/div>/i', '', $cleanContent);

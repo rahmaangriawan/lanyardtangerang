@@ -16,7 +16,9 @@
     $hasThumbnail = in_array('featuredImage', $config['fillable'] ?? [], true) || in_array('imageUrl', $config['fillable'] ?? [], true);
 
     $thumbnailFor = function ($item) {
-        return data_get($item, 'featuredImage') ?: data_get($item, 'imageUrl') ?: data_get($item, 'logoUrl');
+        return \App\Support\AssetUrl::relative(
+            data_get($item, 'featuredImage') ?: data_get($item, 'imageUrl') ?: data_get($item, 'logoUrl')
+        );
     };
 
     $toggleLabel = function ($item) use ($statusField) {

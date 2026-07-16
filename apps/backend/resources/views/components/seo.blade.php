@@ -60,7 +60,10 @@
     $finalCanonical = $siteUrl . '/';
   }
 
-  $ogImagePath = $incomingOgImage ? $incomingOgImage : '/uploads/lanyardtangerang-logo.webp';
+  $ogImagePath = \App\Support\AssetUrl::relative(
+    $incomingOgImage,
+    '/uploads/lanyardtangerang-logo.webp'
+  );
   if (strpos($ogImagePath, 'http') === 0) {
     $finalImage = $ogImagePath;
   } else {

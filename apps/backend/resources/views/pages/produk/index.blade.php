@@ -46,10 +46,7 @@
   }
 
   // Helper: resolve image URL
-  $img = function($src) {
-    if (!$src) return null;
-    return preg_replace('/^https?:\/\/[^\/]+/', '', $src);
-  };
+  $img = fn ($src) => \App\Support\AssetUrl::relative($src);
 
   // Helper: strip HTML for plain text excerpt
   $plain = fn($v) => trim(str_replace('  ', ' ', strip_tags((string) ($v ?? ''))));
