@@ -7,13 +7,11 @@ on:
   workflow_dispatch:
 
 env:
-  APP_NAME: lanyardtangerang.com
-  REMOTE_PATH: htdocs/lanyardtangerang.com
   PHP_VERSION: "8.3"
 
 jobs:
   deploy:
-    name: Deploy Laravel ke CloudPanel
+    name: Deploy Laravel ke CloudPanel via SSH
     runs-on: ubuntu-latest
 
     steps:
@@ -44,31 +42,28 @@ jobs:
       - name: Install SSH tooling
         run: sudo apt-get update && sudo apt-get install -y sshpass unzip
 
-      - name: Upload package
+      - name: Upload & install
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
+          echo "Connecting to $SSH_USER@$SSH_HOST:$SSH_PORT ..."
+
           sshpass -p "$SSH_PASSWORD" scp \
             -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
             -P "$SSH_PORT" \
             deploy.zip \
             "$SSH_USER@$SSH_HOST:deploy-lanyardtangerang.zip"
 
-      - name: Install dependencies & activate
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-        run: |
           sshpass -p "$SSH_PASSWORD" ssh \
             -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
             -p "$SSH_PORT" \
             "$SSH_USER@$SSH_HOST" \
-            "PHP_VERSION='$PHP_VERSION' APP_NAME='$APP_NAME' REMOTE_PATH='$REMOTE_PATH' DEPLOY_ID='$GITHUB_SHA' bash -s" <<'REMOTE_SCRIPT'
+            bash -s <<'REMOTE_SCRIPT'
           set -euo pipefail
 
           APP_DIR="/home/tangerang/htdocs/lanyardtangerang.com"
@@ -81,7 +76,7 @@ jobs:
           unzip -q "$HOME/deploy-lanyardtangerang.zip" -d "$STAGING_DIR"
           rm -f "$HOME/deploy-lanyardtangerang.zip"
 
-          # Backup .env CloudPanel
+          # Backup .env
           if [ -f "$APP_DIR/.env" ]; then
             cp "$APP_DIR/.env" "$STAGING_DIR/.env"
           fi
@@ -92,7 +87,7 @@ jobs:
             cp -R "$APP_DIR/storage/app/public" "$STAGING_DIR/storage/app/" 2>/dev/null || true
           fi
 
-          # Sync ke app dir (exclude file CMS biar gak kehapus)
+          # Sync
           mkdir -p "$APP_DIR"
           rsync -r --checksum --delete \
             --no-times --no-perms --no-owner --no-group --omit-dir-times \
@@ -107,31 +102,21 @@ jobs:
 
           cd "$APP_DIR"
 
-          # Composer install pakai PHP versi CloudPanel
+          # Composer
           if command -v composer >/dev/null 2>&1; then
             $PHP_BIN $(which composer) install --no-dev --optimize-autoloader --no-interaction
           elif [ -f composer.phar ]; then
             $PHP_BIN composer.phar install --no-dev --optimize-autoloader --no-interaction
           fi
 
-          # Migration safe-mode
           $PHP_BIN artisan migrate --force --no-interaction || true
-
-          # Clear & optimize
-          $PHP_BIN artisan config:clear
-          $PHP_BIN artisan cache:clear
-          $PHP_BIN artisan view:clear
+          $PHP_BIN artisan config:clear || true
+          $PHP_BIN artisan cache:clear || true
+          $PHP_BIN artisan view:clear || true
           $PHP_BIN artisan optimize
-
-          # Storage symlink
           $PHP_BIN artisan storage:link --force || true
 
-          # Fix permission CloudPanel (site user harus owner)
           chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
-          echo ""
-          echo "============================================"
-          echo "  Deploy Lanyard Tangerang selesai!"
-          echo "  $(date)"
-          echo "============================================"
+          echo "DONE: Deploy Lanyard Tangerang selesai — $(date)"
           REMOTE_SCRIPT
