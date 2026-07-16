@@ -314,15 +314,22 @@
   const fadeRight = wrap?.querySelector('.product-gallery-fade.is-right');
   const list = gallery.querySelector('.product-gallery-list');
   const originalSlides = list ? Array.from(list.children) : [];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let loopWidth = 0;
   let loopStart = 0;
   let frame = 0;
+  let motionFrame = 0;
+  let motionTarget = 0;
+  let motionTime = 0;
   let normalizing = false;
   let dragging = false;
   let moved = false;
   let suppressClick = false;
   let startX = 0;
   let startScrollLeft = 0;
+  let dragLastX = 0;
+  let dragLastTime = 0;
+  let dragVelocity = 0;
   let activePointerId = null;
   let wheelTimer = 0;
 
@@ -353,7 +360,73 @@
 
     // Posisi acuan drag ikut dipindah agar gerakan tidak meloncat saat loop berulang.
     if (dragging) startScrollLeft += correction;
+    if (motionFrame) motionTarget += correction;
     return correction;
+  };
+
+  const nearestSlideOffset = (position) => {
+    if (!list) return position;
+    const slides = Array.from(list.children);
+    if (!slides.length) return position;
+
+    return slides.reduce((nearest, slide) => {
+      const offset = slide.offsetLeft;
+      return Math.abs(offset - position) < Math.abs(nearest - position) ? offset : nearest;
+    }, slides[0].offsetLeft);
+  };
+
+  const finishMotion = () => {
+    motionFrame = 0;
+    motionTime = 0;
+    setScrollPosition(motionTarget);
+    normalizeLoop();
+    gallery.style.removeProperty('scroll-behavior');
+    gallery.style.removeProperty('scroll-snap-type');
+    scheduleFadeUpdate();
+  };
+
+  const animateMotion = (time) => {
+    const elapsed = motionTime ? Math.min(time - motionTime, 40) : 16;
+    motionTime = time;
+    const distance = motionTarget - gallery.scrollLeft;
+
+    if (Math.abs(distance) <= 0.35) {
+      finishMotion();
+      return;
+    }
+
+    // Frame-rate independent easing: responsif di awal, lembut saat mendekati kartu.
+    const easing = 1 - Math.exp(-elapsed / 95);
+    gallery.scrollLeft += distance * easing;
+    normalizeLoop();
+    scheduleFadeUpdate();
+    motionFrame = requestAnimationFrame(animateMotion);
+  };
+
+  const glideTo = (target) => {
+    motionTarget = target;
+    gallery.style.scrollBehavior = 'auto';
+    gallery.style.scrollSnapType = 'none';
+
+    if (reducedMotion.matches) {
+      setScrollPosition(motionTarget);
+      normalizeLoop();
+      gallery.style.removeProperty('scroll-behavior');
+      gallery.style.removeProperty('scroll-snap-type');
+      scheduleFadeUpdate();
+      return;
+    }
+
+    if (!motionFrame) {
+      motionTime = 0;
+      motionFrame = requestAnimationFrame(animateMotion);
+    }
+  };
+
+  const cancelMotion = () => {
+    if (motionFrame) cancelAnimationFrame(motionFrame);
+    motionFrame = 0;
+    motionTime = 0;
   };
 
   const updateFades = () => {
@@ -388,35 +461,38 @@
   gallery.addEventListener('scroll', scheduleFadeUpdate, { passive: true });
 
   gallery.addEventListener('wheel', (event) => {
-    if (event.ctrlKey) return;
+    if (event.ctrlKey || dragging) return;
 
-    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+    const rawDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
       ? event.deltaX
       : event.deltaY;
-    if (Math.abs(delta) < 0.5) return;
+    if (Math.abs(rawDelta) < 0.5) return;
 
     event.preventDefault();
-    gallery.style.scrollBehavior = 'auto';
-    gallery.style.scrollSnapType = 'none';
-    gallery.scrollLeft += delta;
-    normalizeLoop();
-    scheduleFadeUpdate();
+    const unit = event.deltaMode === 1 ? 64 : event.deltaMode === 2 ? gallery.clientWidth : 1.9;
+    const delta = Math.max(-420, Math.min(420, rawDelta * unit));
+    const base = motionFrame ? motionTarget : gallery.scrollLeft;
+    glideTo(base + delta);
 
     window.clearTimeout(wheelTimer);
     wheelTimer = window.setTimeout(() => {
       if (dragging) return;
-      gallery.style.removeProperty('scroll-behavior');
-      gallery.style.removeProperty('scroll-snap-type');
-    }, 140);
+      glideTo(nearestSlideOffset(motionTarget));
+    }, 110);
   }, { passive: false });
 
   gallery.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'touch' || event.button !== 0) return;
+    window.clearTimeout(wheelTimer);
+    cancelMotion();
     dragging = true;
     moved = false;
     activePointerId = event.pointerId;
     startX = event.clientX;
     startScrollLeft = gallery.scrollLeft;
+    dragLastX = event.clientX;
+    dragLastTime = performance.now();
+    dragVelocity = 0;
     gallery.classList.add('is-dragging');
     gallery.style.scrollBehavior = 'auto';
     gallery.style.scrollSnapType = 'none';
@@ -429,15 +505,25 @@
     if (Math.abs(distance) > 4) moved = true;
     gallery.scrollLeft = startScrollLeft - distance;
     normalizeLoop();
-    if (moved) event.preventDefault();
+    if (moved) {
+      const now = performance.now();
+      const elapsed = Math.max(now - dragLastTime, 1);
+      const instantVelocity = (event.clientX - dragLastX) / elapsed;
+      dragVelocity = (dragVelocity * 0.65) + (instantVelocity * 0.35);
+      dragLastX = event.clientX;
+      dragLastTime = now;
+      event.preventDefault();
+    }
   });
 
   const stopDragging = (event) => {
     if (!dragging || (event.pointerId !== undefined && event.pointerId !== activePointerId)) return;
+    const shouldGlide = moved;
+    const idleTime = performance.now() - dragLastTime;
+    const releaseVelocity = idleTime > 80 ? 0 : Math.max(-1.6, Math.min(1.6, dragVelocity));
+    const projectedPosition = gallery.scrollLeft - (releaseVelocity * 190);
     dragging = false;
     gallery.classList.remove('is-dragging');
-    gallery.style.removeProperty('scroll-behavior');
-    gallery.style.removeProperty('scroll-snap-type');
     if (activePointerId !== null && gallery.hasPointerCapture(activePointerId)) {
       gallery.releasePointerCapture(activePointerId);
     }
@@ -445,6 +531,11 @@
     if (moved) {
       suppressClick = true;
       setTimeout(() => { suppressClick = false; }, 250);
+    }
+    if (shouldGlide) glideTo(nearestSlideOffset(projectedPosition));
+    else {
+      gallery.style.removeProperty('scroll-behavior');
+      gallery.style.removeProperty('scroll-snap-type');
     }
     scheduleFadeUpdate();
   };
@@ -467,7 +558,9 @@
     event.preventDefault();
     const card = gallery.querySelector('.product-slide');
     const step = (card?.getBoundingClientRect().width || 280) + 20;
-    gallery.scrollBy({ left: event.key === 'ArrowRight' ? step : -step, behavior: 'smooth' });
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const base = motionFrame ? motionTarget : gallery.scrollLeft;
+    glideTo(nearestSlideOffset(base + (direction * step)));
   });
 
   requestAnimationFrame(updateFades);
