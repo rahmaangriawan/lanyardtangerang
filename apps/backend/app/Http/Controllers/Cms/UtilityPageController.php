@@ -22,19 +22,29 @@ class UtilityPageController extends Controller
         $propertyId = trim($settings['google_analytics_property_id'] ?? '');
         $siteUrl = trim($settings['google_search_console_site_url'] ?? '');
         $hasCredential = trim($settings['google_service_account_json'] ?? '') !== '';
-        $cards = [];
+        $connections = [];
+        $metrics = [];
         $integrationErrors = [];
+        $gaData = [
+            'totals' => [],
+            'daily' => [],
+            'topPages' => [],
+        ];
+        $gscData = [
+            'totals' => [],
+            'daily' => [],
+        ];
 
-        $cards[] = $this->statusCard('GA4 Property ID', $propertyId ?: 'Belum diset', $propertyId !== '', 'chart');
-        $cards[] = $this->statusCard('Search Console URL', $siteUrl ?: 'Belum diset', $siteUrl !== '', 'search');
-        $cards[] = $this->statusCard('Service Account', $hasCredential ? 'Tersimpan' : 'Belum diset', $hasCredential, 'key');
+        $connections[] = $this->statusCard('GA4', $propertyId ?: 'Belum diset', $propertyId !== '', 'chart');
+        $connections[] = $this->statusCard('Search Console', $siteUrl ?: 'Belum diset', $siteUrl !== '', 'search');
+        $connections[] = $this->statusCard('Service Account', $hasCredential ? 'Tersimpan' : 'Belum diset', $hasCredential, 'key');
 
         if ($propertyId !== '' && $hasCredential) {
             try {
-                $ga = Cache::remember('cms.analytics.ga4.'.sha1($propertyId), now()->addMinutes(10), fn () => $analytics->fetch());
-                $cards[] = $this->metricCard('Pengguna Aktif', number_format($ga['totals']['activeUsers'] ?? 0, 0, ',', '.'), '30 hari terakhir', 'chart');
-                $cards[] = $this->metricCard('Sesi', number_format($ga['totals']['sessions'] ?? 0, 0, ',', '.'), 'Data GA4 tersinkron', 'chart');
-                $cards[] = $this->metricCard('Page Views', number_format($ga['totals']['pageViews'] ?? 0, 0, ',', '.'), 'Data GA4 tersinkron', 'chart');
+                $gaData = Cache::remember('cms.analytics.ga4.'.sha1($propertyId), now()->addMinutes(10), fn () => $analytics->fetch());
+                $metrics[] = $this->metricCard('Pengguna Aktif', number_format($gaData['totals']['activeUsers'] ?? 0, 0, ',', '.'), 'GA4');
+                $metrics[] = $this->metricCard('Sesi', number_format($gaData['totals']['sessions'] ?? 0, 0, ',', '.'), 'GA4');
+                $metrics[] = $this->metricCard('Page Views', number_format($gaData['totals']['pageViews'] ?? 0, 0, ',', '.'), 'GA4');
             } catch (Throwable $exception) {
                 report($exception);
                 $integrationErrors[] = 'GA4: '.$exception->getMessage();
@@ -43,10 +53,10 @@ class UtilityPageController extends Controller
 
         if ($siteUrl !== '' && $hasCredential) {
             try {
-                $gsc = Cache::remember('cms.analytics.gsc.'.sha1($siteUrl), now()->addMinutes(10), fn () => $searchConsole->fetch());
-                $cards[] = $this->metricCard('Klik Organik', number_format($gsc['totals']['clicks'] ?? 0, 0, ',', '.'), '30 hari terakhir', 'search');
-                $cards[] = $this->metricCard('Impresi', number_format($gsc['totals']['impressions'] ?? 0, 0, ',', '.'), 'Data Search Console tersinkron', 'search');
-                $cards[] = $this->metricCard('Posisi Rata-rata', number_format($gsc['totals']['position'] ?? 0, 1, ',', '.'), 'Data Search Console tersinkron', 'search');
+                $gscData = Cache::remember('cms.analytics.gsc.'.sha1($siteUrl), now()->addMinutes(10), fn () => $searchConsole->fetch());
+                $metrics[] = $this->metricCard('Klik Organik', number_format($gscData['totals']['clicks'] ?? 0, 0, ',', '.'), 'Search Console');
+                $metrics[] = $this->metricCard('Impresi', number_format($gscData['totals']['impressions'] ?? 0, 0, ',', '.'), 'Search Console');
+                $metrics[] = $this->metricCard('Posisi Rata-rata', number_format($gscData['totals']['position'] ?? 0, 1, ',', '.'), 'Search Console');
             } catch (Throwable $exception) {
                 report($exception);
                 $integrationErrors[] = 'Search Console: '.$exception->getMessage();
@@ -57,7 +67,10 @@ class UtilityPageController extends Controller
             'title' => 'Analitik',
             'eyebrow' => 'Insights',
             'description' => 'Ringkasan GA4 dan Search Console 30 hari terakhir, dibaca langsung dari integrasi Google di Settings.',
-            'cards' => $cards,
+            'connections' => $connections,
+            'metrics' => $metrics,
+            'gaData' => $gaData,
+            'gscData' => $gscData,
             'integrationErrors' => $integrationErrors,
         ]);
     }
@@ -74,15 +87,12 @@ class UtilityPageController extends Controller
         ];
     }
 
-    private function metricCard(string $label, string $value, string $description, string $icon): array
+    private function metricCard(string $label, string $value, string $source): array
     {
         return [
             'label' => $label,
             'value' => $value,
-            'description' => $description,
-            'status' => 'Sinkron',
-            'icon' => $icon,
-            'tone' => 'success',
+            'source' => $source,
         ];
     }
 
