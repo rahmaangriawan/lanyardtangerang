@@ -66,7 +66,7 @@ jobs:
             bash -s <<'REMOTE_SCRIPT'
           set -euo pipefail
 
-          APP_DIR="/home/tangerang/htdocs/lanyardtangerang.com"
+          APP_DIR="/home/lanyardtangerang/htdocs/lanyardtangerang.com"
           STAGING_DIR="$HOME/.deploy-lanyardtangerang-$(date +%s)"
           PHP_BIN="/usr/bin/php${PHP_VERSION:-8.3}"
 
@@ -118,8 +118,8 @@ jobs:
           $PHP_BIN artisan config:clear || true
           $PHP_BIN artisan cache:clear || true
           $PHP_BIN artisan view:clear || true
+          $PHP_BIN artisan route:clear || true
           $PHP_BIN artisan migrate --force --no-interaction || true
-          $PHP_BIN artisan optimize
           $PHP_BIN artisan storage:link --force || true
 
           chmod -R 775 storage bootstrap/cache 2>/dev/null || true
