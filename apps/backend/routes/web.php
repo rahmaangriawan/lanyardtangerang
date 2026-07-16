@@ -19,14 +19,22 @@ use Illuminate\Support\Str;
 
 $serveLegacyPublicAsset = function (string $directory, string $path) {
     $rootPublic = dirname(base_path(), 2) . DIRECTORY_SEPARATOR . 'public';
-    $base = realpath($rootPublic . DIRECTORY_SEPARATOR . $directory);
-    $file = $base ? realpath($base . DIRECTORY_SEPARATOR . $path) : false;
+    $bases = array_filter(array_unique([
+        realpath(public_path($directory)),
+        realpath($rootPublic . DIRECTORY_SEPARATOR . $directory),
+    ]));
 
-    abort_unless($base && $file && str_starts_with($file, $base) && is_file($file), 404);
+    foreach ($bases as $base) {
+        $file = realpath($base . DIRECTORY_SEPARATOR . $path);
 
-    return response()->file($file, [
-        'Cache-Control' => 'public, max-age=31536000, immutable',
-    ]);
+        if ($file && str_starts_with($file, $base) && is_file($file)) {
+            return response()->file($file, [
+                'Cache-Control' => 'public, max-age=31536000, immutable',
+            ]);
+        }
+    }
+
+    abort(404);
 };
 
 $serveStorageAsset = function (string $path) {

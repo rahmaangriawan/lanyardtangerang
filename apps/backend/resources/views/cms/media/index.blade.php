@@ -151,6 +151,71 @@
       place-items: center;
       border-radius: .75rem;
     }
+    .media-library-footer {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .media-library-summary {
+      margin: 0;
+      color: var(--color-muted-foreground);
+      font-size: .78rem;
+      line-height: 1.45;
+    }
+    .media-pagination {
+      display: grid;
+      grid-template-columns: minmax(7.5rem, auto) auto minmax(7.5rem, auto);
+      align-items: center;
+      gap: .65rem;
+      margin-inline-start: auto;
+    }
+    .media-pagination__button {
+      min-height: 2.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .45rem;
+      white-space: nowrap;
+    }
+    .media-pagination__button[aria-disabled="true"] {
+      pointer-events: none;
+      opacity: .42;
+    }
+    .media-pagination__status {
+      min-width: 5rem;
+      padding: .55rem .75rem;
+      border: 1px solid var(--color-border);
+      border-radius: .75rem;
+      background: var(--color-surface-2);
+      color: var(--color-muted-foreground);
+      text-align: center;
+      font-size: .78rem;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .media-pagination__status strong {
+      color: var(--color-foreground);
+      font-size: .9rem;
+    }
+    @media (max-width: 640px) {
+      .media-library-footer {
+        align-items: stretch;
+      }
+      .media-library-summary {
+        width: 100%;
+        text-align: center;
+      }
+      .media-pagination {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        margin-inline-start: 0;
+      }
+      .media-pagination__button {
+        min-width: 0;
+        padding-inline: .75rem;
+      }
+    }
   </style>
 @endpush
 
@@ -256,9 +321,42 @@
           </div>
         </div>
 
-        <div class="card__footer">
-          <span class="text-xs text-muted-foreground">Showing {{ $items->firstItem() ?? 0 }}-{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}</span>
-          <div class="ms-auto">{{ $items->links() }}</div>
+        <div class="card__footer media-library-footer">
+          <p class="media-library-summary">
+            Menampilkan {{ $items->firstItem() ?? 0 }}-{{ $items->lastItem() ?? 0 }} dari {{ $items->total() }} media
+          </p>
+
+          @if($items->hasPages())
+            <nav class="media-pagination" aria-label="Navigasi halaman Media Library">
+              @if($items->onFirstPage())
+                <span class="button button--outline button--neutral media-pagination__button" aria-disabled="true">
+                  <span aria-hidden="true">&larr;</span>
+                  <span>Sebelumnya</span>
+                </span>
+              @else
+                <a class="button button--outline button--neutral media-pagination__button" href="{{ $items->previousPageUrl() }}" rel="prev">
+                  <span aria-hidden="true">&larr;</span>
+                  <span>Sebelumnya</span>
+                </a>
+              @endif
+
+              <span class="media-pagination__status" aria-current="page">
+                <strong>{{ $items->currentPage() }}</strong> / {{ $items->lastPage() }}
+              </span>
+
+              @if($items->hasMorePages())
+                <a class="button button--primary media-pagination__button" href="{{ $items->nextPageUrl() }}" rel="next">
+                  <span>Berikutnya</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </a>
+              @else
+                <span class="button button--outline button--neutral media-pagination__button" aria-disabled="true">
+                  <span>Berikutnya</span>
+                  <span aria-hidden="true">&rarr;</span>
+                </span>
+              @endif
+            </nav>
+          @endif
         </div>
       </div>
     </section>

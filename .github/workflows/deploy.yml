@@ -27,6 +27,13 @@ jobs:
 
           cp -R apps/backend/. deploy-package/
 
+          # Aset media legacy berada di luar apps/backend. Sertakan sebagai
+          # payload terpisah agar dapat disinkronkan tanpa menghapus upload CMS.
+          mkdir -p deploy-package/.deploy-assets/storage
+          mkdir -p deploy-package/.deploy-assets/media
+          cp -R deploy/initial-media/. deploy-package/.deploy-assets/storage/
+          cp -R public/media/. deploy-package/.deploy-assets/media/
+
           rm -rf deploy-package/vendor
           rm -rf deploy-package/node_modules
           rm -rf deploy-package/storage/logs/*
@@ -86,6 +93,7 @@ jobs:
           rsync -r --checksum --delete \
             --no-times --no-perms --no-owner --no-group --omit-dir-times \
             --exclude '.env' \
+            --exclude '.deploy-assets/' \
             --exclude 'storage/' \
             --exclude 'public/uploads/' \
             --exclude 'public/storage/' \
@@ -106,6 +114,20 @@ jobs:
             rsync -r --checksum \
               --no-times --no-perms --no-owner --no-group --omit-dir-times \
               "$STAGING_DIR/storage/app/public/uploads/" "$APP_DIR/storage/app/public/uploads/"
+          fi
+
+          if [ -d "$STAGING_DIR/.deploy-assets/storage" ]; then
+            mkdir -p "$APP_DIR/storage/app/public"
+            rsync -r --checksum \
+              --no-times --no-perms --no-owner --no-group --omit-dir-times \
+              "$STAGING_DIR/.deploy-assets/storage/" "$APP_DIR/storage/app/public/"
+          fi
+
+          if [ -d "$STAGING_DIR/.deploy-assets/media" ]; then
+            mkdir -p "$APP_DIR/public/media"
+            rsync -r --checksum \
+              --no-times --no-perms --no-owner --no-group --omit-dir-times \
+              "$STAGING_DIR/.deploy-assets/media/" "$APP_DIR/public/media/"
           fi
 
           rm -rf "$STAGING_DIR"
@@ -139,6 +161,14 @@ jobs:
           test -f public/uploads/hero-lanyard-slider-01.webp
           test -f public/uploads/cta-bg.webp
           test -f storage/app/public/uploads/blog-import/rayakan-kemenangan-dengan-custom-lanyard-lebaran-unik-ini-01-9ju4eg.webp
+          test -f storage/app/public/1791/lanyard-custom-bogor.webp
+          test -f storage/app/public/1765/cetak-lanyard-bogor.webp
+          test -f storage/app/public/1270/perbandingan-bahan-lanyard-nilon,-polyester-dan-tissue.webp
+          test -f storage/app/public/1792/perbedaan-lanyard-sablon-vs-printing.webp
+          test -f storage/app/public/1830/penjelasan-kenapa-harga-per-pcs-lebih-murah-ketika-order-banyak-lanyard.webp
+          test -f storage/app/public/1979/rekomendasi-vendor-lanyard-bogor.webp
+          test -f public/media/1791
+          test -f public/media/1829
 
           echo "DONE: Deploy Lanyard Tangerang selesai — $(date)"
           REMOTE_SCRIPT
