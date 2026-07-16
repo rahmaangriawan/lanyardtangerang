@@ -93,7 +93,8 @@
   .product-splide::-webkit-scrollbar{ display:none; }
   .product-gallery-track{ width:max-content; }
   .product-gallery-list{ display:flex; align-items:stretch; gap:20px; }
-  .product-splide.is-dragging{ cursor: grabbing; }
+  .product-splide.is-dragging,
+  .product-splide.is-dragging *{ cursor:grabbing !important; }
   @media(min-width:1024px){
     .product-splide{
       padding-left:max(40px, calc((100vw - 1280px)/2 + 40px));
@@ -316,30 +317,54 @@
   let loopWidth = 0;
   let loopStart = 0;
   let frame = 0;
+  let normalizing = false;
   let dragging = false;
   let moved = false;
   let suppressClick = false;
   let startX = 0;
   let startScrollLeft = 0;
+  let activePointerId = null;
+  let wheelTimer = 0;
+
+  const setScrollPosition = (left) => {
+    const previousBehavior = gallery.style.scrollBehavior;
+    gallery.style.scrollBehavior = 'auto';
+    gallery.scrollLeft = left;
+    if (previousBehavior) gallery.style.scrollBehavior = previousBehavior;
+    else gallery.style.removeProperty('scroll-behavior');
+  };
+
+  const normalizeLoop = () => {
+    if (normalizing || loopWidth <= 0) return 0;
+
+    const minimum = loopStart;
+    const maximum = loopStart + loopWidth;
+    let target = gallery.scrollLeft;
+
+    while (target < minimum) target += loopWidth;
+    while (target >= maximum) target -= loopWidth;
+
+    const correction = target - gallery.scrollLeft;
+    if (Math.abs(correction) < 1) return 0;
+
+    normalizing = true;
+    setScrollPosition(target);
+    normalizing = false;
+
+    // Posisi acuan drag ikut dipindah agar gerakan tidak meloncat saat loop berulang.
+    if (dragging) startScrollLeft += correction;
+    return correction;
+  };
 
   const updateFades = () => {
     frame = 0;
-    if (loopWidth > 0) {
-      if (gallery.scrollLeft < loopStart - 2) jumpTo(gallery.scrollLeft + loopWidth);
-      else if (gallery.scrollLeft >= loopStart + loopWidth - 2) jumpTo(gallery.scrollLeft - loopWidth);
-    }
+    normalizeLoop();
     fadeLeft?.classList.remove('is-hidden');
     fadeRight?.classList.remove('is-hidden');
   };
 
   const scheduleFadeUpdate = () => {
     if (!frame) frame = requestAnimationFrame(updateFades);
-  };
-
-  const jumpTo = (left) => {
-    gallery.style.scrollBehavior = 'auto';
-    gallery.scrollLeft = left;
-    requestAnimationFrame(() => gallery.style.removeProperty('scroll-behavior'));
   };
 
   const makeClone = (slide) => {
@@ -356,37 +381,67 @@
     requestAnimationFrame(() => {
       loopStart = originalSlides[0].offsetLeft;
       loopWidth = nextClones[0].offsetLeft - loopStart;
-      jumpTo(loopStart);
+      setScrollPosition(loopStart);
     });
   }
 
   gallery.addEventListener('scroll', scheduleFadeUpdate, { passive: true });
 
+  gallery.addEventListener('wheel', (event) => {
+    if (event.ctrlKey) return;
+
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      ? event.deltaX
+      : event.deltaY;
+    if (Math.abs(delta) < 0.5) return;
+
+    event.preventDefault();
+    gallery.style.scrollBehavior = 'auto';
+    gallery.style.scrollSnapType = 'none';
+    gallery.scrollLeft += delta;
+    normalizeLoop();
+    scheduleFadeUpdate();
+
+    window.clearTimeout(wheelTimer);
+    wheelTimer = window.setTimeout(() => {
+      if (dragging) return;
+      gallery.style.removeProperty('scroll-behavior');
+      gallery.style.removeProperty('scroll-snap-type');
+    }, 140);
+  }, { passive: false });
+
   gallery.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'touch' || event.button !== 0) return;
     dragging = true;
     moved = false;
+    activePointerId = event.pointerId;
     startX = event.clientX;
     startScrollLeft = gallery.scrollLeft;
     gallery.classList.add('is-dragging');
+    gallery.style.scrollBehavior = 'auto';
     gallery.style.scrollSnapType = 'none';
     gallery.setPointerCapture(event.pointerId);
   });
 
   gallery.addEventListener('pointermove', (event) => {
-    if (!dragging) return;
+    if (!dragging || event.pointerId !== activePointerId) return;
     const distance = event.clientX - startX;
     if (Math.abs(distance) > 4) moved = true;
     gallery.scrollLeft = startScrollLeft - distance;
+    normalizeLoop();
     if (moved) event.preventDefault();
   });
 
   const stopDragging = (event) => {
-    if (!dragging) return;
+    if (!dragging || (event.pointerId !== undefined && event.pointerId !== activePointerId)) return;
     dragging = false;
     gallery.classList.remove('is-dragging');
+    gallery.style.removeProperty('scroll-behavior');
     gallery.style.removeProperty('scroll-snap-type');
-    if (gallery.hasPointerCapture(event.pointerId)) gallery.releasePointerCapture(event.pointerId);
+    if (activePointerId !== null && gallery.hasPointerCapture(activePointerId)) {
+      gallery.releasePointerCapture(activePointerId);
+    }
+    activePointerId = null;
     if (moved) {
       suppressClick = true;
       setTimeout(() => { suppressClick = false; }, 250);
@@ -396,10 +451,9 @@
 
   gallery.addEventListener('pointerup', stopDragging);
   gallery.addEventListener('pointercancel', stopDragging);
-  gallery.addEventListener('lostpointercapture', () => {
-    dragging = false;
-    gallery.classList.remove('is-dragging');
-    gallery.style.removeProperty('scroll-snap-type');
+  gallery.addEventListener('lostpointercapture', (event) => {
+    if (!dragging || event.pointerId !== activePointerId) return;
+    stopDragging(event);
   });
 
   gallery.addEventListener('click', (event) => {
