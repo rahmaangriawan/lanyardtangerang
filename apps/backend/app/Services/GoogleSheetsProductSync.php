@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\Setting;
+use App\Support\SecureSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -34,9 +35,11 @@ final class GoogleSheetsProductSync
 
     public function sync(): array
     {
-        $settings = Setting::query()
-            ->whereIn('key', ['google_service_account_json', 'google_spreadsheet_id', 'google_spreadsheet_range'])
-            ->pluck('value', 'key');
+        $settings = collect(SecureSettings::getMany([
+            'google_service_account_json',
+            'google_spreadsheet_id',
+            'google_spreadsheet_range',
+        ]));
 
         $credentialJson = trim((string) $settings->get('google_service_account_json'));
         $spreadsheetId = trim((string) $settings->get('google_spreadsheet_id'));
@@ -252,8 +255,8 @@ final class GoogleSheetsProductSync
 
         return collect($tokens)->contains(fn ($token) => $token !== '' && (
             $token === $host
-            || Str::contains($token, 'lanyarddepok')
-            || $token === 'depok'
+            || Str::contains($token, 'lanyardtangerang')
+            || $token === 'tangerang'
         ));
     }
 

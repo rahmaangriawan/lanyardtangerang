@@ -349,7 +349,7 @@
                             @foreach($autoLinkRows as $link)
                               <div class="settings-auto-link-row" data-auto-link-row>
                                 <input class="input" type="text" name="seo_auto_link_keywords[]" value="{{ $link['keyword'] }}" placeholder="Keyword, contoh: lanyard custom" />
-                                <input class="input" type="url" name="seo_auto_link_urls[]" value="{{ $link['url'] }}" placeholder="URL tujuan, contoh: /produk" />
+                                <input class="input" type="text" inputmode="url" name="seo_auto_link_urls[]" value="{{ $link['url'] }}" placeholder="URL relatif /produk atau URL lengkap https://..." />
                                 <button class="button button--outline button--neutral" type="button" data-remove-auto-link>Hapus</button>
                               </div>
                             @endforeach
@@ -364,11 +364,14 @@
                             <input id="setting-{{ $key }}" class="input" type="text" name="settings[{{ $key }}]" value="{{ $value }}" placeholder="/uploads/nama-file.webp" data-image-input />
                           </div>
                         @elseif($type === 'textarea')
-                          <textarea id="setting-{{ $key }}" class="input min-h-32" name="settings[{{ $key }}]" placeholder="{{ $field['placeholder'] ?? '' }}">{{ $value }}</textarea>
+                          <textarea id="setting-{{ $key }}" class="input min-h-32" name="settings[{{ $key }}]" placeholder="{{ ($secretConfigured[$key] ?? false) ? 'Rahasia tersimpan. Isi hanya untuk mengganti.' : ($field['placeholder'] ?? '') }}">{{ $value }}</textarea>
+                          @if($secretConfigured[$key] ?? false)
+                            <p class="mt-2 text-xs text-muted-foreground">Rahasia sudah tersimpan dan tidak ditampilkan kembali.</p>
+                          @endif
                         @elseif($type === 'credential')
-                          @php($hasCredential = trim($value) !== '')
+                          @php($hasCredential = (bool) ($secretConfigured[$key] ?? false))
                           <div class="settings-credential-upload" data-credential-upload data-credential-saved="{{ $hasCredential ? 'true' : 'false' }}">
-                            <input id="setting-{{ $key }}" type="hidden" name="settings[{{ $key }}]" value="{{ e($value) }}" data-credential-value />
+                            <input id="setting-{{ $key }}" type="hidden" name="settings[{{ $key }}]" value="" data-credential-value />
                             <label class="settings-credential-drop {{ $hasCredential ? 'is-saved' : '' }}" for="setting-{{ $key }}-file" data-credential-drop>
                               <input id="setting-{{ $key }}-file" type="file" accept="application/json,.json" data-credential-file />
                               <span class="settings-credential-content">
@@ -463,7 +466,7 @@
 
           <div class="mt-4 flex justify-end gap-2">
             <a class="button button--outline button--neutral" href="{{ route('dashboard') }}">Batal</a>
-            <button class="button button--primary" type="submit">Simpan Settings</button>
+            <button class="button button--primary" type="submit" data-settings-submit>Simpan Settings</button>
           </div>
         </section>
       </div>
@@ -476,6 +479,7 @@
     (function () {
       var tabs = document.querySelectorAll('[data-settings-tab]');
       var panels = document.querySelectorAll('[data-settings-panel]');
+      var settingsForm = document.querySelector('form[action="{{ route('cms.store', 'settings') }}"]');
 
       function activate(id) {
         tabs.forEach(function (tab) {
@@ -491,6 +495,16 @@
           activate(tab.getAttribute('data-settings-tab'));
         });
       });
+
+      if (settingsForm) {
+        settingsForm.addEventListener('submit', function () {
+          var submit = settingsForm.querySelector('[data-settings-submit]');
+          if (!submit || !settingsForm.checkValidity()) return;
+          submit.disabled = true;
+          submit.textContent = 'Menyimpan...';
+          submit.classList.add('is-loading');
+        });
+      }
 
       document.querySelectorAll('[data-image-field]').forEach(function (field) {
         var input = field.querySelector('[data-image-input]');

@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Support\HtmlSanitizer;
 use App\Support\ArticlePreview;
+use App\Support\SecureSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -181,7 +182,7 @@ class CmsResourceController extends Controller
             'media' => collect($media->items())->map(fn (Media $item) => [
                 'id' => $item->id,
                 'filename' => $item->filename,
-                'url' => $item->url,
+                'url' => $item->preview_url,
                 'createdAt' => optional($item->createdAt)->toIso8601String(),
             ])->values(),
             'pagination' => [
@@ -210,7 +211,9 @@ class CmsResourceController extends Controller
         $item = $config['model']::query()->findOrFail($id);
 
         if ($resource === 'media' && $item instanceof Media) {
-            Storage::disk('public')->delete($item->filepath);
+            if ($item->disk_path !== '') {
+                Storage::disk('public')->delete($item->disk_path);
+            }
         }
 
         $item->delete();
@@ -262,7 +265,9 @@ class CmsResourceController extends Controller
     {
         foreach ($items as $item) {
             if ($resource === 'media' && $item instanceof Media) {
-                Storage::disk('public')->delete($item->filepath);
+                if ($item->disk_path !== '') {
+                    Storage::disk('public')->delete($item->disk_path);
+                }
             }
 
             $item->delete();
@@ -423,6 +428,15 @@ class CmsResourceController extends Controller
             ->get()
             ->pluck('value', 'key')
             ->all();
+        $secretConfigured = collect(SecureSettings::SECRET_KEYS)
+            ->mapWithKeys(fn (string $key) => [$key => SecureSettings::get($key) !== ''])
+            ->all();
+
+        foreach (SecureSettings::SECRET_KEYS as $secretKey) {
+            if (array_key_exists($secretKey, $settings)) {
+                $settings[$secretKey] = '';
+            }
+        }
         $seoAutoLinks = collect(json_decode($settings['seo_auto_links'] ?? '[]', true) ?: [])
             ->filter(fn ($item) => is_array($item))
             ->map(fn (array $item) => [
@@ -438,6 +452,7 @@ class CmsResourceController extends Controller
             'config' => Arr::except($config, ['model']),
             'groups' => $groups,
             'settings' => $settings,
+            'secretConfigured' => $secretConfigured,
             'seoAutoLinks' => $seoAutoLinks,
             'rawSettings' => Setting::query()
                 ->whereNotIn('key', $knownKeys)
@@ -488,17 +503,18 @@ class CmsResourceController extends Controller
                 continue;
             }
 
-            Setting::updateOrCreate(
-                ['key' => $key],
-                ['value' => (string) ($value ?? '')]
-            );
+            // An empty credential field means "keep the currently saved
+            // secret". The settings page never sends an existing secret
+            // back to the browser.
+            if (SecureSettings::isSecret($key) && trim((string) $value) === '' && SecureSettings::get($key) !== '') {
+                continue;
+            }
+
+            SecureSettings::put($key, (string) ($value ?? ''));
         }
 
         if (! empty($validated['new_key'])) {
-            Setting::updateOrCreate(
-                ['key' => $validated['new_key']],
-                ['value' => (string) ($validated['new_value'] ?? '')]
-            );
+            SecureSettings::put($validated['new_key'], (string) ($validated['new_value'] ?? ''));
         }
 
         if (! empty($validated['delete_keys'])) {
@@ -533,14 +549,21 @@ class CmsResourceController extends Controller
 
     private function productSyncStatus(): array
     {
-        $settings = Setting::query()
-            ->whereIn('key', ['google_service_account_json', 'google_spreadsheet_id', 'google_spreadsheet_range', 'google_products_last_synced_at'])
-            ->pluck('value', 'key');
+        $settings = collect(SecureSettings::getMany([
+            'google_service_account_json',
+            'google_spreadsheet_id',
+            'google_spreadsheet_range',
+            'google_products_last_synced_at',
+            'google_products_last_sync_summary',
+        ]));
+
+        $summary = json_decode((string) $settings->get('google_products_last_sync_summary'), true);
 
         return [
             'configured' => filled($settings->get('google_service_account_json')) && filled($settings->get('google_spreadsheet_id')),
             'range' => $settings->get('google_spreadsheet_range') ?: 'Sheet1!A:Z',
             'lastSyncedAt' => $settings->get('google_products_last_synced_at'),
+            'summary' => is_array($summary) ? $summary : null,
         ];
     }
 
@@ -827,11 +850,11 @@ class CmsResourceController extends Controller
                 'label' => 'Brand Media',
                 'description' => 'Logo, favicon, dan gambar preview untuk kebutuhan brand/SEO.',
                 'fields' => [
-                    ['key' => 'site_logo', 'label' => 'Logo Utama', 'type' => 'image', 'fallback' => '/uploads/lanyarddepok-logo.webp'],
-                    ['key' => 'site_logo_header', 'label' => 'Logo Header', 'type' => 'image', 'fallback' => '/uploads/lanyarddepok-logo-header.webp'],
-                    ['key' => 'site_logo_mobile', 'label' => 'Logo Mobile', 'type' => 'image', 'fallback' => '/uploads/lanyarddepok-logo-mobile.webp'],
-                    ['key' => 'site_favicon', 'label' => 'Favicon', 'type' => 'image', 'fallback' => '/uploads/lanyarddepok-favicon.webp'],
-                    ['key' => 'og_image', 'label' => 'Open Graph Image', 'type' => 'image', 'fallback' => '/uploads/featured-products-showcase-lanyarddepok-v2.webp'],
+                    ['key' => 'site_logo', 'label' => 'Logo Utama', 'type' => 'image', 'fallback' => '/uploads/lanyardtangerang-logo.webp'],
+                    ['key' => 'site_logo_header', 'label' => 'Logo Header', 'type' => 'image', 'fallback' => '/uploads/lanyardtangerang-logo-header.webp'],
+                    ['key' => 'site_logo_mobile', 'label' => 'Logo Mobile', 'type' => 'image', 'fallback' => '/uploads/lanyardtangerang-logo-mobile.webp'],
+                    ['key' => 'site_favicon', 'label' => 'Favicon', 'type' => 'image', 'fallback' => '/uploads/lanyardtangerang-favicon.webp'],
+                    ['key' => 'og_image', 'label' => 'Open Graph Image', 'type' => 'image', 'fallback' => '/uploads/lanyardtangerang-logo.webp'],
                 ],
             ],
             'kontak' => [

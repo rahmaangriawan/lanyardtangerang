@@ -206,6 +206,11 @@
           <p class="mt-1 text-xs text-muted-foreground">
             @if($productSync['lastSyncedAt'] ?? null)
               Terakhir: {{ \Illuminate\Support\Carbon::parse($productSync['lastSyncedAt'])->translatedFormat('d M Y H:i') }}
+              @if(is_array($productSync['summary'] ?? null))
+                &middot; {{ (int) ($productSync['summary']['created'] ?? 0) }} baru,
+                {{ (int) ($productSync['summary']['updated'] ?? 0) }} diperbarui,
+                {{ (int) ($productSync['summary']['skipped'] ?? 0) }} dilewati
+              @endif
             @elseif($productSync['configured'] ?? false)
               Siap membaca {{ $productSync['range'] }}
             @else

@@ -209,7 +209,7 @@
                 <div class="card__body">
                   <div class="media-card__preview">
                     @if($isImage)
-                      <img src="{{ $item->url }}" alt="{{ $item->filename }}" loading="lazy" />
+                      <img src="{{ $item->preview_url }}" alt="{{ $item->filename }}" loading="lazy" />
                     @else
                       <div class="text-center">
                         <div class="mx-auto media-card__icon">
@@ -228,10 +228,10 @@
                   <p class="mt-2 text-xs text-muted-foreground">{{ optional($item->createdAt)->translatedFormat('d M Y H:i') }}</p>
 
                   <div class="media-actions mt-4">
-                    <button class="button button--sm button--primary media-action-button" type="button" data-copy-url="{{ $item->url }}" title="Copy URL" aria-label="Copy URL {{ $item->filename }}">
+                    <button class="button button--sm button--primary media-action-button" type="button" data-copy-url="{{ $item->preview_url }}" title="Copy URL" aria-label="Copy URL {{ $item->filename }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="1.05em" height="1.05em" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 18q-.825 0-1.412-.587T7 16V4q0-.825.588-1.412T9 2h9q.825 0 1.413.588T20 4v12q0 .825-.587 1.413T18 18zm-4 4q-.825 0-1.412-.587T3 20V7h2v13h10v2z"/></svg>
                     </button>
-                    <a class="button button--sm button--outline button--neutral media-action-button" href="{{ $item->url }}" target="_blank" rel="noopener" title="Buka file" aria-label="Buka {{ $item->filename }}">
+                    <a class="button button--sm button--outline button--neutral media-action-button" href="{{ $item->preview_url }}" target="_blank" rel="noopener" title="Buka file" aria-label="Buka {{ $item->filename }}">
                       <svg xmlns="http://www.w3.org/2000/svg" width="1.05em" height="1.05em" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3l-1.42-1.42l9.3-9.29H14z"/><path fill="currentColor" d="M5 5h6v2H5v12h12v-6h2v6q0 .825-.587 1.413T17 21H5q-.825 0-1.412-.587T3 19V7q0-.825.588-1.412T5 5"/></svg>
                     </a>
                     <form method="post" action="{{ route('cms.destroy', ['media', $item->id]) }}" onsubmit="return confirm('Hapus media ini?')">

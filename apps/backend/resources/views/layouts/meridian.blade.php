@@ -288,10 +288,16 @@
         <div class="page content">
           <div class="content__container">
             @if(session('success'))
-              <div class="alert alert--success mb-4">{{ session('success') }}</div>
+              <div class="alert alert--success flash-toast" role="status" data-flash-toast>
+                <span>{{ session('success') }}</span>
+                <button type="button" class="flash-toast__close" aria-label="Tutup notifikasi" data-flash-toast-close>&times;</button>
+              </div>
             @endif
             @if(session('error'))
-              <div class="alert alert--danger mb-4">{{ session('error') }}</div>
+              <div class="alert alert--danger flash-toast" role="alert" data-flash-toast>
+                <span>{{ session('error') }}</span>
+                <button type="button" class="flash-toast__close" aria-label="Tutup notifikasi" data-flash-toast-close>&times;</button>
+              </div>
             @endif
             @if($errors->any())
               <div class="alert alert--danger mb-4">
@@ -312,6 +318,36 @@
 
     <script src="/vendor/meridian/assets/js/app-shell.js"></script>
     <script src="/vendor/meridian/assets/js/table-select.js"></script>
+    <style>
+      .flash-toast {
+        position: fixed;
+        z-index: 1000;
+        top: 1rem;
+        right: 1rem;
+        width: min(26rem, calc(100vw - 2rem));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 0;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, .18);
+        animation: flash-toast-in .28s ease-out both;
+      }
+      .flash-toast.is-leaving { animation: flash-toast-out .2s ease-in both; }
+      .flash-toast__close {
+        flex: 0 0 auto;
+        border: 0;
+        padding: .2rem;
+        color: inherit;
+        background: transparent;
+        font-size: 1.3rem;
+        line-height: 1;
+        cursor: pointer;
+      }
+      @keyframes flash-toast-in { from { opacity: 0; transform: translateY(-.75rem); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes flash-toast-out { to { opacity: 0; transform: translateY(-.5rem); } }
+      @media (prefers-reduced-motion: reduce) { .flash-toast, .flash-toast.is-leaving { animation: none; } }
+    </style>
     <script>
       (function () {
         var menu = document.querySelector('[data-profile-menu]');
@@ -327,6 +363,22 @@
           if (menu.contains(event.target)) return;
           menu.classList.remove('is-open');
           toggle.setAttribute('aria-expanded', 'false');
+        });
+      })();
+
+      (function () {
+        document.querySelectorAll('[data-flash-toast]').forEach(function (toast) {
+          var timer;
+          function closeToast() {
+            if (toast.classList.contains('is-leaving')) return;
+            toast.classList.add('is-leaving');
+            window.setTimeout(function () { toast.remove(); }, 220);
+          }
+          var close = toast.querySelector('[data-flash-toast-close]');
+          if (close) close.addEventListener('click', closeToast);
+          timer = window.setTimeout(closeToast, 4500);
+          toast.addEventListener('mouseenter', function () { window.clearTimeout(timer); });
+          toast.addEventListener('mouseleave', function () { timer = window.setTimeout(closeToast, 1800); });
         });
       })();
     </script>

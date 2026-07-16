@@ -62,6 +62,7 @@ final class GoogleAnalyticsService
                 'dimensions' => [
                     ['name' => 'date'],
                 ],
+                'metricAggregations' => ['TOTAL'],
                 'keepEmptyRows' => false,
                 'returnPropertyQuota' => false,
             ]);

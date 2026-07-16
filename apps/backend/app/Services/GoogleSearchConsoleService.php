@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\SecureSettings;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -35,8 +36,8 @@ final class GoogleSearchConsoleService
             ->acceptJson()
             ->timeout(25)
             ->post('https://searchconsole.googleapis.com/v1/sites/' . rawurlencode($siteUrl) . '/searchAnalytics/query', [
-                'startDate' => '30daysAgo',
-                'endDate' => 'today',
+                'startDate' => Carbon::now()->subDays(29)->toDateString(),
+                'endDate' => Carbon::now()->toDateString(),
                 'dimensions' => ['date'],
                 'rowLimit' => 30,
             ]);
@@ -45,7 +46,7 @@ final class GoogleSearchConsoleService
             $status = $response->status();
             if ($status === 404) {
                 $msg = 'Situs \''.$siteUrl.'\' tidak ditemukan atau service account belum ditambahkan sebagai pengguna di Search Console. '
-                    .'Buka Google Search Console &rarr; Settings &rarr; Users and permissions, '
+                    .'Buka Google Search Console -> Settings -> Users and permissions, '
                     .'tambahkan email: '.($credentials['client_email'] ?? '');
                 throw new RuntimeException($msg);
             }

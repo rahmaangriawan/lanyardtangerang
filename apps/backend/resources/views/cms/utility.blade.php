@@ -105,6 +105,16 @@
   </header>
 
   <div class="page__body">
+    @if(!empty($integrationErrors))
+      <div class="alert alert--danger mb-4" role="alert">
+        <strong>Integrasi Google belum dapat dibaca.</strong>
+        <ul class="mt-2">
+          @foreach($integrationErrors as $integrationError)
+            <li>{{ $integrationError }}</li>
+          @endforeach
+        </ul>
+      </div>
+    @endif
     <section class="page__section">
       <div class="analytics-card-grid">
         @foreach($cards as $card)
