@@ -31,8 +31,10 @@ jobs:
           # payload terpisah agar dapat disinkronkan tanpa menghapus upload CMS.
           mkdir -p deploy-package/.deploy-assets/storage
           mkdir -p deploy-package/.deploy-assets/media
+          mkdir -p deploy-package/.deploy-assets/uploads
           cp -R deploy/initial-media/. deploy-package/.deploy-assets/storage/
           cp -R public/media/. deploy-package/.deploy-assets/media/
+          cp -R public/uploads/. deploy-package/.deploy-assets/uploads/
 
           rm -rf deploy-package/vendor
           rm -rf deploy-package/node_modules
@@ -130,6 +132,13 @@ jobs:
               "$STAGING_DIR/.deploy-assets/media/" "$APP_DIR/public/media/"
           fi
 
+          if [ -d "$STAGING_DIR/.deploy-assets/uploads" ]; then
+            mkdir -p "$APP_DIR/public/uploads"
+            rsync -r --checksum \
+              --no-times --no-perms --no-owner --no-group --omit-dir-times \
+              "$STAGING_DIR/.deploy-assets/uploads/" "$APP_DIR/public/uploads/"
+          fi
+
           rm -rf "$STAGING_DIR"
 
           cd "$APP_DIR"
@@ -169,6 +178,12 @@ jobs:
           test -f storage/app/public/1979/rekomendasi-vendor-lanyard-bogor.webp
           test -f public/media/1791
           test -f public/media/1829
+          test -f public/uploads/lanyard-telkomsel-1782278237998.webp
+          test -f public/uploads/bank-indonesia-1782278433183.webp
+          test -f public/uploads/universitas-indonesia-1782278573470.webp
+          test -f public/uploads/kemenkes-ri-1782278922986.webp
+          test -f public/uploads/rrq-1782279058422.webp
+          test -f public/uploads/lanyard-ugm-1782279137305.webp
 
           echo "DONE: Deploy Lanyard Tangerang selesai — $(date)"
           REMOTE_SCRIPT
