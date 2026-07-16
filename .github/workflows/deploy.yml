@@ -1,4 +1,4 @@
-name: Deploy Lanyard Depok
+name: Deploy Lanyard Tangerang (Laravel Blade)
 
 on:
   push:
@@ -7,66 +7,39 @@ on:
   workflow_dispatch:
 
 env:
-  APP_NAME: lanyarddepok.com
-  REMOTE_PATH: htdocs/lanyarddepok.com
-  APP_PORT: "3007"
-  PUBLIC_SITE_URL: https://lanyarddepok.com
-  PUBLIC_BACKEND_URL: https://lanyarddepok.com
-  PUBLIC_API_BASE_URL: https://lanyarddepok.com/api
+  APP_NAME: lanyardtangerang.com
+  REMOTE_PATH: htdocs/lanyardtangerang.com
+  PHP_VERSION: "8.3"
 
 jobs:
   deploy:
-    name: Build and deploy Laravel + Astro to CloudPanel
+    name: Deploy Laravel ke CloudPanel
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.32.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: pnpm
-          cache-dependency-path: apps/frontend/pnpm-lock.yaml
-
-      - name: Install frontend dependencies
-        working-directory: apps/frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Build Astro frontend
-        working-directory: apps/frontend
-        env:
-          PUBLIC_SITE_URL: ${{ env.PUBLIC_SITE_URL }}
-          PUBLIC_BACKEND_URL: ${{ env.PUBLIC_BACKEND_URL }}
-          PUBLIC_API_BASE_URL: ${{ env.PUBLIC_API_BASE_URL }}
-        run: pnpm build
-
-      - name: Package Laravel and Astro
+      - name: Package Laravel backend
         shell: bash
         run: |
           set -euo pipefail
           rm -rf deploy-package deploy.zip
-          mkdir -p deploy-package/apps/frontend deploy-package/apps/backend deploy-package/initial-media
+          mkdir -p deploy-package
 
-          cp -R apps/backend/. deploy-package/apps/backend/
-          rm -rf deploy-package/apps/backend/vendor deploy-package/apps/backend/node_modules
-          rm -rf deploy-package/apps/backend/storage/logs
+          cp -R apps/backend/. deploy-package/
 
-          cp -R apps/frontend/dist deploy-package/apps/frontend/dist
-          cp -R deploy/initial-media/. deploy-package/initial-media/
-          cp restart.sh deploy-package/restart.sh
-          chmod +x deploy-package/restart.sh
+          rm -rf deploy-package/vendor
+          rm -rf deploy-package/node_modules
+          rm -rf deploy-package/storage/logs/*
+          rm -rf deploy-package/tests
+          rm -rf deploy-package/.phpunit.result.cache
+          rm -rf deploy-package/.editorconfig
+          rm -rf deploy-package/.gitattributes
+          rm -f  deploy-package/README.md
 
           cd deploy-package
-          zip -qr ../deploy.zip . \
-            -x "*/.env" "*/.env.*" "*/node_modules/*" \
-            -x "*/storage/logs/*" "*.map" "*/.git/*" "*/.github/*"
+          zip -qr ../deploy.zip . -x "*.map" ".env" ".env.*"
 
       - name: Install SSH tooling
         run: sudo apt-get update && sudo apt-get install -y sshpass unzip
@@ -82,9 +55,9 @@ jobs:
             -o StrictHostKeyChecking=no \
             -P "$SSH_PORT" \
             deploy.zip \
-            "$SSH_USER@$SSH_HOST:deploy-lanyarddepok.zip"
+            "$SSH_USER@$SSH_HOST:deploy-lanyardtangerang.zip"
 
-      - name: Install Laravel dependencies and restart applications
+      - name: Install dependencies & activate
         env:
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
@@ -95,167 +68,70 @@ jobs:
             -o StrictHostKeyChecking=no \
             -p "$SSH_PORT" \
             "$SSH_USER@$SSH_HOST" \
-            "APP_NAME='$APP_NAME' APP_PORT='$APP_PORT' REMOTE_PATH='$REMOTE_PATH' DEPLOY_ID='$GITHUB_SHA' bash -s" <<'REMOTE_SCRIPT'
+            "PHP_VERSION='$PHP_VERSION' APP_NAME='$APP_NAME' REMOTE_PATH='$REMOTE_PATH' DEPLOY_ID='$GITHUB_SHA' bash -s" <<'REMOTE_SCRIPT'
           set -euo pipefail
 
-          if [ -d "$HOME/$REMOTE_PATH" ]; then
-            APP_DIR="$HOME/$REMOTE_PATH"
-          else
-            APP_DIR="$REMOTE_PATH"
-          fi
-
-          STAGING_DIR="$HOME/.deploy-lanyarddepok-$DEPLOY_ID"
-          rm -rf "$STAGING_DIR"
-          mkdir -p "$STAGING_DIR" "$APP_DIR"
-          unzip -q "$HOME/deploy-lanyarddepok.zip" -d "$STAGING_DIR"
-          rm -f "$HOME/deploy-lanyarddepok.zip"
-
-          if [ -f "$APP_DIR/apps/backend/.env" ] && [ ! -f "$APP_DIR/backend.env" ]; then
-            cp "$APP_DIR/apps/backend/.env" "$APP_DIR/backend.env"
-          fi
-
-          ensure_backend_storage() {
-            STORAGE_DIR="$APP_DIR/apps/backend/storage"
-            STORAGE_BACKUP=""
-
-            if [ -e "$STORAGE_DIR" ] && [ ! -d "$STORAGE_DIR" ]; then
-              STORAGE_BACKUP="$APP_DIR/apps/backend/storage.unwritable.$(date +%Y%m%d%H%M%S)"
-              echo "Existing storage path is not a directory. Moving it to $STORAGE_BACKUP."
-              mv "$STORAGE_DIR" "$STORAGE_BACKUP"
-            fi
-
-            if [ -d "$STORAGE_DIR" ] && [ ! -w "$STORAGE_DIR" ]; then
-              STORAGE_BACKUP="$APP_DIR/apps/backend/storage.unwritable.$(date +%Y%m%d%H%M%S)"
-              echo "Existing storage directory is not writable. Moving it to $STORAGE_BACKUP."
-              if ! mv "$STORAGE_DIR" "$STORAGE_BACKUP"; then
-                echo "Cannot move unwritable storage directory. Please fix ownership for $STORAGE_DIR in CloudPanel, then rerun deploy."
-                exit 1
-              fi
-            fi
-
-            mkdir -p "$STORAGE_DIR"
-
-            if [ -n "$STORAGE_BACKUP" ] && [ -d "$STORAGE_BACKUP/app/public" ]; then
-              mkdir -p "$STORAGE_DIR/app/public"
-              if command -v rsync >/dev/null 2>&1; then
-                rsync -r --inplace \
-                  --no-times --no-perms --no-owner --no-group --omit-dir-times \
-                  "$STORAGE_BACKUP/app/public/" "$STORAGE_DIR/app/public/" || true
-              else
-                cp -R "$STORAGE_BACKUP/app/public/." "$STORAGE_DIR/app/public/" 2>/dev/null || true
-              fi
-            fi
-          }
-
-          if [ -d "$APP_DIR/shared/storage" ] && [ ! -f "$APP_DIR/.direct-deploy-migrated" ]; then
-            mkdir -p "$APP_DIR/apps/backend/storage"
-            if command -v rsync >/dev/null 2>&1; then
-              rsync -r --inplace \
-                --no-times --no-perms --no-owner --no-group --omit-dir-times \
-                "$APP_DIR/shared/storage/" "$APP_DIR/apps/backend/storage/"
-            else
-              cp -R "$APP_DIR/shared/storage/." "$APP_DIR/apps/backend/storage/"
-            fi
-            touch "$APP_DIR/.direct-deploy-migrated"
-          fi
-
-          chmod -R u+rwX "$APP_DIR/apps" 2>/dev/null || true
-
-          ensure_frontend_dist() {
-            FRONTEND_DIST="$APP_DIR/apps/frontend/dist"
-            FRONTEND_SERVER="$FRONTEND_DIST/server"
-
-            if [ -d "$FRONTEND_SERVER" ] && [ ! -w "$FRONTEND_SERVER" ]; then
-              FRONTEND_BACKUP="$APP_DIR/apps/frontend/dist.unwritable.$(date +%Y%m%d%H%M%S)"
-              echo "Existing Astro dist server directory is not writable. Moving dist to $FRONTEND_BACKUP."
-              if ! mv "$FRONTEND_DIST" "$FRONTEND_BACKUP"; then
-                echo "Cannot move unwritable Astro dist directory. Rename or delete $FRONTEND_DIST in CloudPanel, then rerun deploy."
-                exit 1
-              fi
-            fi
-          }
-
-          ensure_frontend_dist
-
-          # Seed bundled starter media only when the destination file is absent.
-          # This restores a fresh server without overwriting later CMS uploads.
-          ensure_backend_storage
-          if [ -d "$STAGING_DIR/initial-media" ]; then
-            if command -v rsync >/dev/null 2>&1; then
-              rsync -r --ignore-existing \
-                --no-times --no-perms --no-owner --no-group --omit-dir-times \
-                "$STAGING_DIR/initial-media/" \
-                "$APP_DIR/apps/backend/storage/app/public/"
-            else
-              cp -Rn "$STAGING_DIR/initial-media/." "$APP_DIR/apps/backend/storage/app/public/"
-            fi
-          fi
-
-          if command -v rsync >/dev/null 2>&1; then
-            rsync -r --checksum \
-              --no-times --no-perms --no-owner --no-group --omit-dir-times \
-              --exclude 'apps/backend/.env' \
-              --exclude 'apps/backend/storage/' \
-              "$STAGING_DIR/" "$APP_DIR/"
-          else
-            cp -R "$STAGING_DIR/." "$APP_DIR/"
-          fi
+          APP_DIR="/home/tangerang/htdocs/lanyardtangerang.com"
+          STAGING_DIR="$HOME/.deploy-lanyardtangerang-$(date +%s)"
+          PHP_BIN="/usr/bin/php${PHP_VERSION:-8.3}"
 
           rm -rf "$STAGING_DIR"
+          mkdir -p "$STAGING_DIR"
 
-          if [ ! -f "$APP_DIR/apps/backend/.env" ] && [ -f "$APP_DIR/backend.env" ]; then
-            mkdir -p "$APP_DIR/apps/backend"
-            cp "$APP_DIR/backend.env" "$APP_DIR/apps/backend/.env"
+          unzip -q "$HOME/deploy-lanyardtangerang.zip" -d "$STAGING_DIR"
+          rm -f "$HOME/deploy-lanyardtangerang.zip"
+
+          # Backup .env CloudPanel
+          if [ -f "$APP_DIR/.env" ]; then
+            cp "$APP_DIR/.env" "$STAGING_DIR/.env"
           fi
 
-          if [ ! -f "$APP_DIR/apps/backend/.env" ] && [ -f "$APP_DIR/shared/backend.env" ]; then
-            mkdir -p "$APP_DIR/apps/backend"
-            cp "$APP_DIR/shared/backend.env" "$APP_DIR/apps/backend/.env"
+          # Backup uploads
+          if [ -d "$APP_DIR/storage/app/public" ]; then
+            mkdir -p "$STAGING_DIR/storage/app"
+            cp -R "$APP_DIR/storage/app/public" "$STAGING_DIR/storage/app/" 2>/dev/null || true
           fi
 
-          if [ ! -f "$APP_DIR/apps/backend/.env" ]; then
-            echo "Laravel environment file not found. Create $APP_DIR/backend.env or $APP_DIR/apps/backend/.env and rerun deploy."
-            exit 1
-          fi
+          # Sync ke app dir (exclude file CMS biar gak kehapus)
+          mkdir -p "$APP_DIR"
+          rsync -r --checksum --delete \
+            --no-times --no-perms --no-owner --no-group --omit-dir-times \
+            --exclude '.env' \
+            --exclude 'storage/' \
+            --exclude 'public/uploads/' \
+            --exclude 'public/storage/' \
+            --exclude 'publicimagestrust/' \
+            "$STAGING_DIR/" "$APP_DIR/"
 
-          ensure_backend_storage
-          mkdir -p \
-            "$APP_DIR/apps/backend/storage/app/private" \
-            "$APP_DIR/apps/backend/storage/app/public" \
-            "$APP_DIR/apps/backend/storage/framework/cache/data" \
-            "$APP_DIR/apps/backend/storage/framework/sessions" \
-            "$APP_DIR/apps/backend/storage/framework/views" \
-            "$APP_DIR/apps/backend/storage/logs"
-
-          # PHP-FPM may own session/cache files. Only the public upload directory
-          # needs shared write access; changing every runtime file can fail.
-          chmod 0777 "$APP_DIR/apps/backend/storage/app/public"
-
-          STORAGE_WRITE_TEST="$APP_DIR/apps/backend/storage/app/public/.deploy-write-test"
-          if ! touch "$STORAGE_WRITE_TEST"; then
-            echo "Laravel public storage is not writable: $APP_DIR/apps/backend/storage/app/public"
-            exit 1
-          fi
-          rm -f "$STORAGE_WRITE_TEST"
-
-          cd "$APP_DIR/apps/backend"
-          composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-          php artisan migrate --force
-          php artisan content:import-initial
-          php artisan storage:link || true
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
+          rm -rf "$STAGING_DIR"
 
           cd "$APP_DIR"
-          APP_NAME="$APP_NAME" APP_PORT="$APP_PORT" REMOTE_PATH="$REMOTE_PATH" bash ./restart.sh
 
-          sleep 3
-          curl -fsS "http://127.0.0.1:$APP_PORT/" >/dev/null
-          if ! curl -fsS -H "Host: $APP_NAME" "http://127.0.0.1:8080/api/posts?limit=1" >/dev/null; then
-            echo "Laravel public API health check failed. Recent Laravel log:"
-            tail -n 100 "$APP_DIR/apps/backend/storage/logs/laravel.log" 2>/dev/null || true
-            exit 1
+          # Composer install pakai PHP versi CloudPanel
+          if command -v composer >/dev/null 2>&1; then
+            $PHP_BIN $(which composer) install --no-dev --optimize-autoloader --no-interaction
+          elif [ -f composer.phar ]; then
+            $PHP_BIN composer.phar install --no-dev --optimize-autoloader --no-interaction
           fi
-          echo "Astro health check passed on port $APP_PORT."
+
+          # Migration safe-mode
+          $PHP_BIN artisan migrate --force --no-interaction || true
+
+          # Clear & optimize
+          $PHP_BIN artisan config:clear
+          $PHP_BIN artisan cache:clear
+          $PHP_BIN artisan view:clear
+          $PHP_BIN artisan optimize
+
+          # Storage symlink
+          $PHP_BIN artisan storage:link --force || true
+
+          # Fix permission CloudPanel (site user harus owner)
+          chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
+          echo ""
+          echo "============================================"
+          echo "  Deploy Lanyard Tangerang selesai!"
+          echo "  $(date)"
+          echo "============================================"
           REMOTE_SCRIPT
