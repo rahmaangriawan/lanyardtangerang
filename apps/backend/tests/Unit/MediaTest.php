@@ -19,10 +19,15 @@ class MediaTest extends TestCase
             'mimetype' => 'image/webp',
             'url' => '/media/1791',
         ]);
+        $media->id = 56;
 
         $this->assertSame(
             '/storage/1791/lanyard-custom-bogor.webp',
             $media->preview_url,
+        );
+        $this->assertSame(
+            '/storage/1791/lanyard-custom-bogor.webp?v=56-0',
+            $media->preview_src,
         );
     }
 }

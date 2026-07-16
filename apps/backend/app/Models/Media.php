@@ -83,6 +83,17 @@ class Media extends Model
         return Storage::disk('public')->url((string) $this->filename);
     }
 
+    public function getPreviewSrcAttribute(): string
+    {
+        $url = $this->preview_url;
+        $version = implode('-', [
+            (string) ($this->getKey() ?: 'new'),
+            (string) ($this->size ?: 0),
+        ]);
+
+        return $url.(str_contains($url, '?') ? '&' : '?').'v='.rawurlencode($version);
+    }
+
     public function getDiskPathAttribute(): string
     {
         $path = ltrim(str_replace('\\', '/', trim((string) $this->filepath)), '/');

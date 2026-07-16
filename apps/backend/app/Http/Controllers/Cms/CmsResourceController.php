@@ -183,6 +183,7 @@ class CmsResourceController extends Controller
                 'id' => $item->id,
                 'filename' => $item->filename,
                 'url' => $item->preview_url,
+                'preview_url' => $item->preview_src,
                 'createdAt' => optional($item->createdAt)->toIso8601String(),
             ])->values(),
             'pagination' => [

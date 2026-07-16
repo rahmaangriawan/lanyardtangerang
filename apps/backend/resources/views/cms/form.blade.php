@@ -1057,7 +1057,7 @@
         item.className = 'media-picker-item';
         item.type = 'button';
         item.setAttribute('data-media-url', media.url || '');
-        image.src = media.url || '';
+        image.src = media.preview_url || media.url || '';
         image.alt = '';
         image.loading = 'lazy';
         label.className = 'block p-2 text-xs font-bold line-clamp-2';
