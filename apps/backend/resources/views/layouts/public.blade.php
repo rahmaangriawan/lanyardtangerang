@@ -47,7 +47,6 @@
     {{-- Preload Critical Fonts --}}
     <link rel="preload" href="/fonts/geist/Geist-400.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preload" href="/fonts/geist/Geist-700.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="preload" href="/fonts/material-symbols/MaterialSymbolsOutlined.woff2" as="font" type="font/woff2" crossorigin>
 
     {{-- Bundled CSS: Tailwind + colors + global + header + hero + fonts (minified) --}}
     @php

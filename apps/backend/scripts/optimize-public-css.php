@@ -13,6 +13,12 @@ foreach ([500, 600, 800] as $weight) {
     );
 }
 
+$css = preg_replace(
+    '#/fonts/material-symbols/MaterialSymbolsOutlined\.woff2(?:\?v=\d+)?#',
+    '/fonts/material-symbols/MaterialSymbolsOutlined.woff2?v=2',
+    $css,
+);
+
 if (file_put_contents($path, $css) === false) {
     throw new RuntimeException("Cannot write {$path}");
 }

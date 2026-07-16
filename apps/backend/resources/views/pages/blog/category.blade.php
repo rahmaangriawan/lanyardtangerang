@@ -41,7 +41,7 @@
   <div class="mx-auto max-w-[1280px] px-6 lg:px-10">
     @if ($posts->isEmpty())
       <div class="text-center py-20">
-        <span class="material-symbols-outlined text-6xl text-slate-300">article_off</span>
+        <span class="material-symbols-outlined text-6xl text-slate-300">article</span>
         <h2 class="mt-6 text-xl font-bold text-slate-900">Artikel tidak ditemukan</h2>
         <p class="mt-2 text-[15px] text-slate-600">Belum ada artikel yang diterbitkan dalam kategori ini.</p>
         <a href="/blog" class="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-colors shadow-sm active:scale-[0.98]">

@@ -1,11 +1,11 @@
 {{-- Dipercaya Berbagai Instansi — Final Premium Editorial + Scroll Reveal Reversible --}}
 @php
   $testimonials = [
-    ['name'=>'Rizky Pratama','role'=>'Event Officer, Bank Indonesia','quote'=>'Hasil printing tajam, bahan nyaman dipakai, dan pengerjaan lanyard untuk event kami selesai cepat.','avatar'=>'/images/testimonials/rizky-pratama.webp','logo'=>'/images/logos/bank-indonesia.svg'],
-    ['name'=>'Dewi Lestari','role'=>'Marcom, Telkomsel','quote'=>'Desain sesuai request dan hasilnya rapi. Timnya responsif dari mockup sampai pengiriman.','avatar'=>'/images/testimonials/dewi-lestari.webp','logo'=>'/images/logos/telkomsel.svg'],
-    ['name'=>'Farhan Ramadhan','role'=>'Koordinator Acara, UI','quote'=>'Pesanan untuk event kampus memuaskan. Warna cerah, bahan tebal, dan semuanya tepat waktu.','avatar'=>'/images/testimonials/farhan-ramadhan.webp','logo'=>'/images/logos/universitas-indonesia.png'],
-    ['name'=>'Septiana Andini','role'=>'Procurement, BCA','quote'=>'Pelayanan ramah, cetakan rapi, dan pengiriman aman sampai tujuan. Prosesnya terasa mudah.','avatar'=>'/images/testimonials/septiana-andini.webp','logo'=>'/images/logos/bca.svg'],
-    ['name'=>'Amanda Putri','role'=>'Humas, Kemenkes RI','quote'=>'Pemesanan lanyard instansi dalam jumlah besar selesai tepat waktu dengan kualitas yang seragam.','avatar'=>'/images/testimonials/amanda-putri.webp','logo'=>'/images/logos/kemenkes.svg'],
+    ['name'=>'Rizky Pratama','role'=>'Event Officer, Bank Indonesia','quote'=>'Hasil printing tajam, bahan nyaman dipakai, dan pengerjaan lanyard untuk event kami selesai cepat.','avatar'=>'/images/testimonials/rizky-pratama.webp','logo'=>'/images/logos/bank-indonesia.svg','logoWidth'=>108,'logoHeight'=>19],
+    ['name'=>'Dewi Lestari','role'=>'Marcom, Telkomsel','quote'=>'Desain sesuai request dan hasilnya rapi. Timnya responsif dari mockup sampai pengiriman.','avatar'=>'/images/testimonials/dewi-lestari.webp','logo'=>'/images/logos/telkomsel.svg','logoWidth'=>111,'logoHeight'=>19],
+    ['name'=>'Farhan Ramadhan','role'=>'Koordinator Acara, UI','quote'=>'Pesanan untuk event kampus memuaskan. Warna cerah, bahan tebal, dan semuanya tepat waktu.','avatar'=>'/images/testimonials/farhan-ramadhan.webp','logo'=>'/images/logos/universitas-indonesia.png','logoWidth'=>62,'logoHeight'=>19],
+    ['name'=>'Septiana Andini','role'=>'Procurement, BCA','quote'=>'Pelayanan ramah, cetakan rapi, dan pengiriman aman sampai tujuan. Prosesnya terasa mudah.','avatar'=>'/images/testimonials/septiana-andini.webp','logo'=>'/images/logos/bca.svg','logoWidth'=>61,'logoHeight'=>19],
+    ['name'=>'Amanda Putri','role'=>'Humas, Kemenkes RI','quote'=>'Pemesanan lanyard instansi dalam jumlah besar selesai tepat waktu dengan kualitas yang seragam.','avatar'=>'/images/testimonials/amanda-putri.webp','logo'=>'/images/logos/kemenkes.svg','logoWidth'=>26,'logoHeight'=>19],
   ];
 @endphp
 
@@ -23,16 +23,16 @@
     <div class="relative w-full select-none" id="trust-sky" style="height: clamp(284px, 32vw, 362px);" aria-label="Dokumentasi klien">
       <div class="t-float t-f1" data-parallax="0.04" data-parallax-rotate="1" style="--rot:-3.2deg"><img src="/images/testimonials/farhan-ramadhan.webp" alt="Testimoni Farhan Ramadhan koordinator acara UI - lanyard custom Tangerang" width="86" height="110" loading="lazy" decoding="async" /></div>
       <div class="t-float t-f2" data-parallax="0.08" style="--rot:2.1deg"><img src="/images/trust/trust-1-192w.webp" srcset="/images/trust/trust-1-192w.webp 192w, /images/trust/trust-1-384w.webp 384w" sizes="154px" alt="Lanyard custom Tangerang - hasil cetak event Bank Indonesia dan korporat" width="154" height="108" loading="lazy" decoding="async" /></div>
-      <div class="t-float t-logo t-f3" data-parallax="0.06" style="--rot:-2.4deg"><img src="/images/logos/bank-indonesia.svg" alt="Bank Indonesia - klien Lanyard custom Tangerang" loading="lazy" /></div>
+      <div class="t-float t-logo t-f3" data-parallax="0.06" style="--rot:-2.4deg"><img src="/images/logos/bank-indonesia.svg" alt="Bank Indonesia - klien Lanyard custom Tangerang" width="116" height="20" loading="lazy" /></div>
       <div class="t-float t-f4" data-parallax="0.10" style="--rot:2.8deg"><img src="/images/trust/trust-2-192w.webp" srcset="/images/trust/trust-2-192w.webp 192w, /images/trust/trust-2-384w.webp 384w" sizes="176px" alt="Lanyard custom premium Tangerang - produksi cepat untuk event kampus UI" width="176" height="116" loading="lazy" decoding="async" /></div>
-      <div class="t-float t-logo t-f5" data-parallax="0.05" style="--rot:-3.8deg"><img src="/images/logos/telkomsel.svg" alt="Telkomsel - klien Lanyard custom Tangerang" loading="lazy" /></div>
+      <div class="t-float t-logo t-f5" data-parallax="0.05" style="--rot:-3.8deg"><img src="/images/logos/telkomsel.svg" alt="Telkomsel - klien Lanyard custom Tangerang" width="116" height="20" loading="lazy" /></div>
       <div class="t-float t-f6" data-parallax="0.12" data-parallax-rotate="1" style="--rot:4.2deg"><img src="/images/testimonials/dewi-lestari.webp" alt="Testimoni Dewi Lestari Marcom Telkomsel - layanan lanyard Tangerang memuaskan" width="108" height="134" loading="lazy" decoding="async" /></div>
       <div class="t-float t-f7" data-parallax="0.07" style="--rot:-2.8deg"><img src="/images/trust/trust-3-192w.webp" srcset="/images/trust/trust-3-192w.webp 192w, /images/trust/trust-3-384w.webp 384w" sizes="148px" alt="Cetak lanyard custom Tangerang Selatan - dokumentasi klien Telkomsel & BCA" width="148" height="102" loading="lazy" decoding="async" /></div>
-      <div class="t-float t-logo t-f8" data-parallax="0.05" style="--rot:2.6deg"><img src="/images/logos/bca.svg" alt="BCA - klien Lanyard custom Tangerang" loading="lazy" /></div>
+      <div class="t-float t-logo t-f8" data-parallax="0.05" style="--rot:2.6deg"><img src="/images/logos/bca.svg" alt="BCA - klien Lanyard custom Tangerang" width="90" height="28" loading="lazy" /></div>
       <div class="t-float t-id t-f9" data-parallax="0.09" data-parallax-rotate="1" style="--rot:-3.6deg"><div class="t-idbar"></div><div class="t-idline" style="width:76%"></div><div class="t-idline" style="width:62%"></div><div class="t-idline" style="width:84%"></div><span class="t-cap">ID CARD • LANYARD</span></div>
-      <div class="t-float t-logo t-f10" data-parallax="0.06" style="--rot:1.6deg"><img src="/images/logos/universitas-indonesia.png" alt="Universitas Indonesia - klien Lanyard custom Tangerang" loading="lazy" /></div>
+      <div class="t-float t-logo t-f10" data-parallax="0.06" style="--rot:1.6deg"><img src="/images/logos/universitas-indonesia.png" alt="Universitas Indonesia - klien Lanyard custom Tangerang" width="91" height="28" loading="lazy" /></div>
       <div class="t-float t-f11" data-parallax="0.08" style="--rot:-1.8deg"><img src="/images/trust/trust-4-192w.webp" srcset="/images/trust/trust-4-192w.webp 192w, /images/trust/trust-4-384w.webp 384w" sizes="158px" alt="Lanyard custom untuk instansi pemerintah - hasil produksi Tangerang" width="158" height="104" loading="lazy" decoding="async" /></div>
-      <div class="t-float t-logo t-f12" data-parallax="0.05" style="--rot:3.1deg"><img src="/images/logos/kemenkes.svg" alt="Kemenkes RI - klien Lanyard custom Tangerang" loading="lazy" /></div>
+      <div class="t-float t-logo t-f12" data-parallax="0.05" style="--rot:3.1deg"><img src="/images/logos/kemenkes.svg" alt="Kemenkes RI - klien Lanyard custom Tangerang" width="38" height="28" loading="lazy" /></div>
       {{-- trust-5 new floating — masuk di area bawah sky biar padat --}}
       <div class="t-float t-f13" data-parallax="0.06" style="--rot:1.9deg"><img src="/images/trust/trust-5-192w.webp" srcset="/images/trust/trust-5-192w.webp 192w, /images/trust/trust-5-384w.webp 384w" sizes="144px" alt="Lanyard sablon full color custom Tangerang - koleksi terbaru 2026" width="144" height="100" loading="lazy" decoding="async" /></div>
     </div>
@@ -54,7 +54,9 @@
           <div class="flex items-center justify-center bg-slate-50 border border-slate-200/70" style="width:30px; height:30px; border-radius:9999px;">
             <span class="material-symbols-outlined" style="font-size:15px; color:#94a3b8;">format_quote</span>
           </div>
-          <img src="{{ $t['logo'] }}" alt="{{ $t['name'] }} - klien Lanyard custom Tangerang di {{ $t['role'] }}" style="height:19px; width:auto; object-fit:contain; opacity:0.68; filter:grayscale(100%);" loading="lazy" />
+          @if(!empty($t['logo']))
+            <img src="{{ $t['logo'] }}" alt="{{ $t['name'] }} - klien Lanyard custom Tangerang di {{ $t['role'] }}" width="{{ $t['logoWidth'] }}" height="{{ $t['logoHeight'] }}" style="height:19px; width:auto; object-fit:contain; opacity:0.68; filter:grayscale(100%);" loading="lazy" decoding="async" />
+          @endif
         </div>
         <p style="font-size:14px; line-height:1.72; letter-spacing:-0.01em; color:#334155;">“{{ $t['quote'] }}”</p>
         <div class="flex items-center gap-3" style="margin-top:24px; padding-top:16px; border-top:1px solid #f1f5f9;">
