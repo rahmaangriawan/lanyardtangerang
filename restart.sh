@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ -d "$HOME/.nvm" ]; then
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-fi
-
-APP_NAME="${APP_NAME:-lanyarddepok.com}"
-APP_PORT="${APP_PORT:-3007}"
-REMOTE_PATH="${REMOTE_PATH:-htdocs/lanyarddepok.com}"
+APP_NAME="${APP_NAME:-lanyardtangerang.com}"
+REMOTE_PATH="${REMOTE_PATH:-htdocs/lanyardtangerang.com}"
 
 if [ -d "$HOME/$REMOTE_PATH" ]; then
   APP_DIR="$HOME/$REMOTE_PATH"
@@ -19,26 +13,14 @@ else
 fi
 
 cd "$APP_DIR"
-export PORT="$APP_PORT"
-export HOST="127.0.0.1"
-export NODE_ENV=production
 
-echo "=== Restarting Astro frontend ==="
+echo "=== Restarting Lanyard Tangerang (Laravel) ==="
 echo "Application directory: $APP_DIR"
-echo "Application name: $APP_NAME"
-echo "Application port: $APP_PORT"
 
-if command -v pm2 >/dev/null 2>&1; then
-  pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
-  pm2 start "$APP_DIR/apps/frontend/dist/server/entry.mjs" --name "$APP_NAME" --cwd "$APP_DIR" --update-env
-  pm2 save >/dev/null 2>&1 || true
-else
-  PID_FILE="$APP_DIR/astro.pid"
-  if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-    kill "$(cat "$PID_FILE")"
-  fi
-  nohup node "$APP_DIR/apps/frontend/dist/server/entry.mjs" > "$APP_DIR/astro.log" 2>&1 &
-  echo $! > "$PID_FILE"
-fi
+# Clear cache & optimize
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+php artisan optimize
 
-echo "Astro frontend restarted."
+echo "Lanyard Tangerang restarted."

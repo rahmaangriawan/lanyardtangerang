@@ -6,8 +6,8 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <link rel="icon" type="image/webp" href="/uploads/lanyarddepok-favicon.webp">
-        <link rel="shortcut icon" href="/uploads/lanyarddepok-favicon.webp">
+        <link rel="icon" type="image/webp" href="/uploads/lanyardtangerang-favicon.webp">
+        <link rel="shortcut icon" href="/uploads/lanyardtangerang-favicon.webp">
 
         <script>
             (function () {

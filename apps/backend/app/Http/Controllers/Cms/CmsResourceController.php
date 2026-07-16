@@ -64,6 +64,8 @@ class CmsResourceController extends Controller
             $query->where('published', $request->boolean('published'));
         }
 
+        $perPage = max(1, min($request->integer('per_page') ?: 12, 500));
+
         $sortColumn = $config['sort'][0] ?? 'id';
         $sortDirection = $config['sort'][1] ?? 'desc';
 
@@ -72,8 +74,9 @@ class CmsResourceController extends Controller
             'config' => Arr::except($config, ['model']),
             'items' => $query
                 ->orderBy($sortColumn, $sortDirection)
-                ->paginate(12)
-                ->withQueryString(),
+                ->paginate($perPage)
+                ->appends($request->except('page')),
+            'perPage' => $perPage,
             'filters' => [
                 'q' => $search,
                 'type' => $request->query('type'),

@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login - Lanyard Depok CMS</title>
-    <link rel="icon" type="image/webp" href="/uploads/lanyarddepok-favicon.webp" />
-    <link rel="shortcut icon" href="/uploads/lanyarddepok-favicon.webp" />
+    <title>Login - Lanyard Tangerang CMS</title>
+    <link rel="icon" type="image/webp" href="/uploads/lanyardtangerang-favicon.webp" />
+    <link rel="shortcut icon" href="/uploads/lanyardtangerang-favicon.webp" />
     <script>
       (function () {
         var t = localStorage.getItem("stisla-theme");
@@ -243,13 +243,13 @@
       <div class="auth-panel">
         <section class="auth-brand">
           <a class="auth-brand__top" href="{{ route('dashboard') }}">
-            <img class="auth-brand__logo" src="/uploads/lanyarddepok-logo-header.webp" alt="Lanyard Depok" />
+            <img class="auth-brand__logo" src="/uploads/lanyardtangerang-logo-header.webp" alt="Lanyard Tangerang" />
           </a>
 
           <div>
             <p class="auth-brand__eyebrow">Dashboard Internal</p>
             <h1 class="auth-brand__title">Kelola CMS tanpa ribet.</h1>
-            <p class="auth-brand__copy">Atur konten, produk, media, inquiry, dan pengaturan website Lanyard Depok dari satu panel yang rapi.</p>
+            <p class="auth-brand__copy">Atur konten, produk, media, inquiry, dan pengaturan website Lanyard Tangerang dari satu panel yang rapi.</p>
           </div>
         </section>
 
@@ -257,7 +257,7 @@
           <div class="auth-form-card">
             <p class="auth-form__eyebrow">Login Dashboard</p>
             <h1 class="auth-form__title">Masuk ke Kawruh CMS</h1>
-            <p class="auth-form__copy">Gunakan akun admin Lanyard Depok untuk mengelola website.</p>
+            <p class="auth-form__copy">Gunakan akun admin Lanyard Tangerang untuk mengelola website.</p>
 
             @if($status)
               <div class="alert alert--success" style="margin-top: 1.25rem;">{{ $status }}</div>

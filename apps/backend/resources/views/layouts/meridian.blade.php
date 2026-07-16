@@ -34,12 +34,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@yield('title', 'Dashboard') · Lanyard Depok</title>
-    <link rel="icon" type="image/webp" href="/uploads/lanyarddepok-favicon.webp" />
-    <link rel="shortcut icon" href="/uploads/lanyarddepok-favicon.webp" />
+    <title>@yield('title', 'Dashboard') · Lanyard Tangerang</title>
+    <link rel="icon" type="image/webp" href="/uploads/lanyardtangerang-favicon.webp" />
+    <link rel="shortcut icon" href="/uploads/lanyardtangerang-favicon.webp" />
     <script>
       (function () {
-        var color = localStorage.getItem("lanyarddepok-dashboard-primary");
+        var color = localStorage.getItem("lanyardtangerang-dashboard-primary");
         if (color) document.documentElement.style.setProperty("--meridian-accent", color);
       })();
     </script>
@@ -218,8 +218,8 @@
       <aside class="sidebar sidebar--lg sidebar--app" data-stisla-sidebar>
         <header class="sidebar__header">
           <a class="sidebar__brand" href="{{ route('dashboard') }}">
-            <img class="dashboard-brand-logo dashboard-brand-logo--full" src="/uploads/lanyarddepok-logo-header.webp" alt="Lanyard Depok" />
-            <img class="dashboard-brand-logo dashboard-brand-logo--icon" src="/uploads/lanyarddepok-favicon.webp" alt="Lanyard Depok" />
+            <img class="dashboard-brand-logo dashboard-brand-logo--full" src="/uploads/lanyardtangerang-logo-header.webp" alt="Lanyard Tangerang" />
+            <img class="dashboard-brand-logo dashboard-brand-logo--icon" src="/uploads/lanyardtangerang-favicon.webp" alt="Lanyard Tangerang" />
           </a>
         </header>
 

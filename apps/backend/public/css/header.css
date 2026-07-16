@@ -1,0 +1,298 @@
+/* =============================================
+   HEADER — Lanyard Tangerang
+   Converted from shadcn header-2 (React → CSS)
+   Uses project CSS variables: --primary, --border, etc.
+   ============================================= */
+
+/* Ensure proper box model sizing for all header elements */
+.site-header,
+.site-header *,
+.site-header *::before,
+.site-header *::after {
+  box-sizing: border-box;
+}
+
+/* Base: sticky, centered, transparent border (no visible border by default) */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1200px;           /* expanded base width */
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  overflow: hidden;            /* prevent children from breaking out */
+  transition: all 0.2s ease-out;
+}
+
+/* Desktop: rounded container */
+@media (min-width: 768px) {
+  .site-header {
+    border-radius: 0.375rem;   /* md:rounded-md */
+    border: 1px solid transparent;
+  }
+
+  /* Scrolled state — floating pill with shadow */
+  .site-header.is-scrolled {
+    top: 1rem;                 /* md:top-4 */
+    max-width: 58rem;          /* slightly wider to fit content */
+    border-color: var(--border);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* Mobile: solid white background */
+@media (max-width: 767px) {
+  .site-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* When mobile menu open — opaque background */
+.site-header:has(.site-header__mobile.is-open) {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Nav bar */
+.site-header__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.5rem;              /* h-14 */
+  width: 100%;
+  padding: 0 1rem;            /* balanced padding */
+  transition: all 0.2s ease-out;
+}
+
+@media (min-width: 768px) {
+  .site-header__nav {
+    height: 3rem;              /* md:h-12 */
+  }
+
+  .is-scrolled .site-header__nav {
+    padding: 0 1rem;          /* keep comfortable padding */
+  }
+}
+
+/* Logo */
+.site-header__logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.site-header__logo img {
+  height: 2.5rem;              /* much bigger logo */
+  width: auto;
+  object-fit: contain;
+}
+
+/* Desktop Links (hidden on mobile) */
+.site-header__links {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;                 /* gap-2 */
+}
+
+@media (min-width: 768px) {
+  .site-header__links {
+    display: flex;
+  }
+}
+
+/* Ghost link style */
+.site-header__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 0.375rem;     /* rounded-md */
+  height: 2.5rem;              /* h-10 */
+  padding: 0 1rem;             /* px-4 */
+  font-size: 0.875rem;         /* text-sm */
+  font-weight: 500;            /* font-medium */
+  color: var(--foreground);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.site-header__link:hover {
+  background: var(--muted);
+  color: var(--primary);
+}
+
+/* Mobile link — full width, left-aligned */
+.site-header__link--mobile {
+  justify-content: flex-start;
+  width: 100%;
+  height: 3rem;
+  font-size: 1rem;
+}
+
+/* Desktop Actions (hidden on mobile) */
+.site-header__actions {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .site-header__actions {
+    display: flex;
+  }
+}
+
+/* Buttons */
+.site-header__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 0.375rem;
+  height: 2.5rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.site-header__btn--primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.site-header__btn--primary:hover {
+  opacity: 0.9;
+}
+
+.site-header__btn--full {
+  width: 100%;
+}
+
+/* Hamburger (mobile only) */
+.site-header__hamburger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--background);
+  cursor: pointer;
+  color: var(--foreground);
+  gap: 4px;                    /* gap between lines */
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.site-header__hamburger:hover {
+  background: var(--muted);
+}
+
+@media (min-width: 768px) {
+  .site-header__hamburger {
+    display: none;
+  }
+}
+
+/* ── Animated Hamburger Icon ── */
+.hamburger-line {
+  display: block;
+  width: 1.25rem;
+  height: 2px;
+  background-color: currentColor;
+  border-radius: 1px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+  transform-origin: center;
+}
+
+/* Open states to form a perfect X */
+.site-header__hamburger[aria-expanded="true"] .hamburger-line--top {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.site-header__hamburger[aria-expanded="true"] .hamburger-line--middle {
+  opacity: 0;
+}
+
+.site-header__hamburger[aria-expanded="true"] .hamburger-line--bottom {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* ── Mobile Menu Overlay ── */
+.site-header__mobile {
+  display: none;
+  position: fixed;
+  top: 3.5rem;                 /* top-14 */
+  right: 0;
+  left: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  height: auto;
+  max-height: calc(100vh - 3.5rem);
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .site-header__mobile {
+    display: none !important;
+  }
+}
+
+.site-header__mobile.is-open {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Inner container with animation */
+.site-header__mobile-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+  padding: 1rem;
+  gap: 0.5rem;
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+
+/* Closed state */
+.site-header__mobile-inner[data-slot="closed"] {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Open state */
+.site-header__mobile-inner[data-slot="open"] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Mobile nav links container */
+.site-header__mobile-links {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* Mobile actions container */
+.site-header__mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Prevent body scroll */
+body:has(.site-header__mobile.is-open) {
+  overflow: hidden;
+}

@@ -347,7 +347,20 @@
         </div>
 
         <div class="card__footer flex-wrap gap-3">
-          <span class="text-xs text-muted-foreground">Showing {{ $items->firstItem() ?? 0 }}-{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}</span>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-muted-foreground">Showing {{ $items->firstItem() ?? 0 }}-{{ $items->lastItem() ?? 0 }} of {{ $items->total() }}</span>
+            <form method="get" class="inline-flex items-center gap-1.5" data-per-page-form>
+              @foreach(request()->except('per_page', 'page') as $k => $v)
+                <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+              @endforeach
+              <label class="text-xs text-muted-foreground whitespace-nowrap">Per halaman:</label>
+              <select name="per_page" class="input text-xs py-1 px-2" style="width:auto;min-height:auto;" onchange="this.form.submit()">
+                @foreach([12, 25, 50, 100, 200, 300, 500] as $opt)
+                  <option value="{{ $opt }}" @selected(($perPage ?? 12) == $opt)>{{ $opt }}</option>
+                @endforeach
+              </select>
+            </form>
+          </div>
           <div class="ms-auto">{{ $items->links() }}</div>
         </div>
       </div>
