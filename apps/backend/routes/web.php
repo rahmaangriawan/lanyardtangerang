@@ -43,8 +43,8 @@ $serveStorageAsset = function (string $path) {
 };
 
 Route::get('/', function () {
-    return redirect(config('app.frontend_url', env('ASTRO_FRONTEND_URL', 'http://localhost:4321')));
-});
+    return view('pages.home');
+})->name('home');
 
 Route::get('/media/{path}', fn (string $path) => $serveLegacyPublicAsset('media', $path))->where('path', '.*');
 Route::get('/uploads/{path}', fn (string $path) => $serveLegacyPublicAsset('uploads', $path))->where('path', '.*');
