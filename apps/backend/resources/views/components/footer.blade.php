@@ -11,11 +11,6 @@
       <p class="text-slate-400 text-body-md leading-relaxed">
         Solusi cetak lanyard custom tercepat dan termurah di Tangerang dengan standar kualitas industri. Bebas ongkir Tangerang Raya, Same Day Service.
       </p>
-      <div class="mt-6 flex flex-wrap gap-2">
-        <a href="/produk" class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Produk Lanyard</a>
-        <a href="/area" class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Area Jangkauan</a>
-        <a href="/blog" class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">Blog & Tips</a>
-      </div>
     </div>
 
     {{-- Informasi --}}
