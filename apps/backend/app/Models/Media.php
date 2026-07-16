@@ -47,6 +47,24 @@ class Media extends Model
         }
 
         if (str_starts_with($rawPath, 'media/')) {
+            $legacyDirectory = trim(substr($rawPath, strlen('media/')), '/');
+            $storedFiles = $legacyDirectory !== ''
+                ? Storage::disk('public')->files($legacyDirectory)
+                : [];
+
+            if ($storedFiles === [] && $legacyDirectory !== '') {
+                $rootStorage = dirname(base_path(), 2).DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'storage';
+                $legacyFiles = glob($rootStorage.DIRECTORY_SEPARATOR.$legacyDirectory.DIRECTORY_SEPARATOR.'*') ?: [];
+                $storedFiles = array_map(
+                    fn (string $file) => $legacyDirectory.'/'.basename($file),
+                    array_values(array_filter($legacyFiles, 'is_file')),
+                );
+            }
+
+            if ($storedFiles !== []) {
+                return '/storage/'.implode('/', array_map('rawurlencode', explode('/', $storedFiles[0])));
+            }
+
             return '/'.$rawPath;
         }
 
