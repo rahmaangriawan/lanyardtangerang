@@ -28,7 +28,13 @@ $serveLegacyPublicAsset = function (string $directory, string $path) {
         $file = realpath($base . DIRECTORY_SEPARATOR . $path);
 
         if ($file && str_starts_with($file, $base) && is_file($file)) {
+            $imageInfo = @getimagesize($file);
+            $mimeType = is_array($imageInfo) && isset($imageInfo['mime'])
+                ? (string) $imageInfo['mime']
+                : (mime_content_type($file) ?: 'application/octet-stream');
+
             return response()->file($file, [
+                'Content-Type' => $mimeType,
                 'Cache-Control' => 'public, max-age=31536000, immutable',
             ]);
         }
