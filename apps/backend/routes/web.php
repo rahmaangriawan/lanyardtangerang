@@ -5,10 +5,17 @@ use App\Http\Controllers\Cms\CmsResourceController;
 use App\Http\Controllers\Cms\DashboardController;
 use App\Http\Controllers\Cms\UtilityPageController;
 use App\Http\Controllers\Cms\ProductSyncController;
-use Illuminate\Foundation\Application;
+use App\Models\AuthorSlugRedirect;
+use App\Models\Category;
+use App\Models\Comment;
+use App\Models\Post;
+use App\Models\Product;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use Illuminate\Support\Str;
 
 $serveLegacyPublicAsset = function (string $directory, string $path) {
     $rootPublic = dirname(base_path(), 2) . DIRECTORY_SEPARATOR . 'public';
@@ -51,6 +58,142 @@ Route::get('/uploads/{path}', fn (string $path) => $serveLegacyPublicAsset('uplo
 Route::get('/images/{path}', fn (string $path) => $serveLegacyPublicAsset('images', $path))->where('path', '.*');
 Route::get('/storage/{path}', fn (string $path) => $serveStorageAsset($path))->where('path', '.*');
 
+// Public pages
+Route::view('/produk', 'pages.produk.index')->name('products.index');
+Route::get('/produk/{slug}', function (string $slug) {
+    $product = Product::query()
+        ->with('category')
+        ->where('published', true)
+        ->where('slug', $slug)
+        ->firstOrFail();
+
+    return view('pages.produk.show', compact('product'));
+})->name('products.show');
+
+Route::view('/area', 'pages.area')->name('area');
+Route::view('/cara-pemesanan', 'pages.cara-pemesanan')->name('ordering');
+Route::view('/daftar-harga', 'pages.daftar-harga')->name('pricing');
+Route::view('/promo', 'pages.promo')->name('promo');
+Route::view('/pengiriman', 'pages.pengiriman')->name('shipping');
+Route::view('/kebijakan', 'pages.kebijakan')->name('privacy');
+Route::view('/syarat-ketentuan', 'pages.syarat-ketentuan')->name('terms');
+
+Route::view('/blog', 'pages.blog.index')->name('blog.index');
+Route::get('/kategori/{slug}', function (string $slug) {
+    $category = Category::query()
+        ->where('type', 'BLOG')
+        ->where('slug', $slug)
+        ->firstOrFail();
+
+    $posts = Post::query()
+        ->with(['category', 'author'])
+        ->where('published', true)
+        ->where('categoryId', $category->id)
+        ->orderByDesc('createdAt')
+        ->paginate(9)
+        ->withQueryString();
+
+    return view('pages.blog.category', compact('category', 'posts'));
+})->name('blog.category');
+
+Route::get('/tag/{slug}', function (string $slug) {
+    $matchingPosts = Post::query()
+        ->with(['category', 'author'])
+        ->where('published', true)
+        ->whereNotNull('tags')
+        ->orderByDesc('createdAt')
+        ->get()
+        ->filter(function (Post $post) use ($slug): bool {
+            return collect(explode(',', (string) $post->tags))
+                ->contains(fn (string $tag): bool => Str::slug(trim($tag)) === $slug);
+        })
+        ->values();
+
+    $matchedTag = $matchingPosts
+        ->flatMap(fn (Post $post) => explode(',', (string) $post->tags))
+        ->map(fn (string $tag) => trim($tag))
+        ->first(fn (string $tag): bool => Str::slug($tag) === $slug);
+    $tagName = $matchedTag ?: Str::headline($slug);
+    $page = LengthAwarePaginator::resolveCurrentPage();
+    $perPage = 9;
+    $posts = new LengthAwarePaginator(
+        $matchingPosts->forPage($page, $perPage)->values(),
+        $matchingPosts->count(),
+        $perPage,
+        $page,
+        ['path' => request()->url(), 'query' => request()->query()],
+    );
+
+    return view('pages.blog.tag', compact('tagName', 'posts'));
+})->name('blog.tag');
+
+Route::get('/blog/penulis/{slug}', function (string $slug) {
+    $author = User::query()->where('slug', $slug)->first();
+
+    if (! $author) {
+        $redirect = AuthorSlugRedirect::query()->with('author')->where('slug', $slug)->first();
+        abort_unless($redirect?->author, 404);
+
+        return redirect('/blog/penulis/'.$redirect->author->slug, 301);
+    }
+
+    $authorSlug = $author->slug ?: Str::slug($author->name);
+    $posts = Post::query()
+        ->with(['category', 'author'])
+        ->where('published', true)
+        ->where('authorId', $author->id)
+        ->orderByDesc('createdAt')
+        ->paginate(12)
+        ->withQueryString();
+
+    return view('pages.blog.author', compact('author', 'authorSlug', 'posts'));
+})->name('blog.author');
+
+Route::get('/blog/{slug}', function (string $slug) {
+    $post = Post::query()
+        ->with(['category', 'author'])
+        ->where('published', true)
+        ->where('slug', $slug)
+        ->firstOrFail();
+
+    $comments = $post->comments()
+        ->where('approved', true)
+        ->orderByDesc('createdAt')
+        ->get();
+    $relatedPosts = Post::query()
+        ->where('published', true)
+        ->whereKeyNot($post->id)
+        ->when($post->categoryId, fn ($query) => $query->where('categoryId', $post->categoryId))
+        ->orderByDesc('createdAt')
+        ->limit(4)
+        ->get();
+
+    return view('pages.blog.show', compact('post', 'comments', 'relatedPosts'));
+})->name('blog.show');
+
+Route::post('/blog/{slug}/comments', function (Request $request, string $slug) {
+    $post = Post::query()
+        ->where('published', true)
+        ->where('slug', $slug)
+        ->firstOrFail();
+    $data = $request->validate([
+        'name' => ['required', 'string', 'max:100'],
+        'email' => ['required', 'email', 'max:190'],
+        'content' => ['required', 'string', 'max:2000'],
+    ]);
+
+    Comment::query()->create([
+        'postId' => $post->id,
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'content' => $data['content'],
+        'approved' => false,
+    ]);
+
+    return redirect('/blog/'.$post->slug.'#comments')
+        ->with('comment_sent', 'Komentar berhasil dikirim dan menunggu moderasi.');
+})->middleware('throttle:5,1')->name('blog.comment');
+
 Route::redirect('/dashboard', '/kawruh');
 Route::get('/kawruh/login', fn () => redirect(Auth::check() ? '/dashboard' : '/login'));
 Route::redirect('/login/blackout', '/login');
@@ -85,3 +228,10 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Redirect URL artikel lama yang sebelumnya berada langsung di root domain.
+Route::get('/{slug}', function (string $slug) {
+    abort_unless(Post::query()->where('published', true)->where('slug', $slug)->exists(), 404);
+
+    return redirect('/blog/'.$slug, 301);
+})->where('slug', '[A-Za-z0-9-]+')->name('blog.legacy');
