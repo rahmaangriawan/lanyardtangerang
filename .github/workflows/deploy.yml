@@ -109,10 +109,16 @@ jobs:
             $PHP_BIN composer.phar install --no-dev --optimize-autoloader --no-interaction
           fi
 
-          $PHP_BIN artisan migrate --force --no-interaction || true
+          # Pastiin folder cache ada
+          mkdir -p storage/framework/views
+          mkdir -p storage/framework/cache/data
+          mkdir -p storage/framework/sessions
+          mkdir -p bootstrap/cache
+
           $PHP_BIN artisan config:clear || true
           $PHP_BIN artisan cache:clear || true
           $PHP_BIN artisan view:clear || true
+          $PHP_BIN artisan migrate --force --no-interaction || true
           $PHP_BIN artisan optimize
           $PHP_BIN artisan storage:link --force || true
 
