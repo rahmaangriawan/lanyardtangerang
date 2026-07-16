@@ -27,20 +27,10 @@
       <h2 data-sr="title" class="font-bold tracking-tight text-slate-900" style="font-size: clamp(2rem, 4vw, 2.75rem); line-height:1.08; letter-spacing:-0.03em;">
         Pilihan Produk Unggulan
       </h2>
-      <div data-sr="fade" data-sr-delay="80" class="flex items-center gap-3">
-        <div class="hidden md:flex items-center gap-2" aria-label="Navigasi slider produk">
-          <button id="product-gallery-prev" class="product-gallery-control" type="button" aria-label="Lihat produk sebelumnya" disabled>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-          </button>
-          <button id="product-gallery-next" class="product-gallery-control" type="button" aria-label="Lihat produk berikutnya">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-          </button>
-        </div>
-        <a href="/produk" class="group inline-flex items-center gap-2 text-[14px] font-semibold text-slate-700 hover:text-slate-900">
-          <span>Lihat semua</span>
-          <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-0.5">arrow_forward</span>
-        </a>
-      </div>
+      <a data-sr="fade" data-sr-delay="80" href="/produk" class="group inline-flex items-center gap-2 text-[14px] font-semibold text-slate-700 hover:text-slate-900">
+        <span>Lihat semua</span>
+        <span class="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:translate-x-0.5">arrow_forward</span>
+      </a>
     </div>
   </div>
 
@@ -78,15 +68,6 @@
 </section>
 
 <style>
-  .product-gallery-control{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:40px; height:40px; border:1px solid #dde0e3; border-radius:9999px;
-    color:#334155; background:#fff; cursor:pointer;
-    transition:background-color 180ms ease, color 180ms ease, border-color 180ms ease, transform 180ms ease;
-  }
-  .product-gallery-control:hover:not(:disabled){ background:#253141; border-color:#253141; color:#fff; transform:translateY(-1px); }
-  .product-gallery-control:focus-visible{ outline:2px solid #536b86; outline-offset:2px; }
-  .product-gallery-control:disabled{ opacity:.35; cursor:not-allowed; }
   .product-gallery-wrap{
     position:relative;
     width:100%;
@@ -330,8 +311,10 @@
   const wrap = gallery.closest('.product-gallery-wrap');
   const fadeLeft = wrap?.querySelector('.product-gallery-fade.is-left');
   const fadeRight = wrap?.querySelector('.product-gallery-fade.is-right');
-  const previousButton = document.getElementById('product-gallery-prev');
-  const nextButton = document.getElementById('product-gallery-next');
+  const list = gallery.querySelector('.product-gallery-list');
+  const originalSlides = list ? Array.from(list.children) : [];
+  let loopWidth = 0;
+  let loopStart = 0;
   let frame = 0;
   let dragging = false;
   let moved = false;
@@ -341,18 +324,41 @@
 
   const updateFades = () => {
     frame = 0;
-    const maxScroll = Math.max(0, gallery.scrollWidth - gallery.clientWidth);
-    const atStart = gallery.scrollLeft <= 2;
-    const atEnd = gallery.scrollLeft >= maxScroll - 2;
-    fadeLeft?.classList.toggle('is-hidden', atStart);
-    fadeRight?.classList.toggle('is-hidden', atEnd);
-    if (previousButton) previousButton.disabled = atStart;
-    if (nextButton) nextButton.disabled = atEnd;
+    if (loopWidth > 0) {
+      if (gallery.scrollLeft < loopStart - 2) jumpTo(gallery.scrollLeft + loopWidth);
+      else if (gallery.scrollLeft >= loopStart + loopWidth - 2) jumpTo(gallery.scrollLeft - loopWidth);
+    }
+    fadeLeft?.classList.remove('is-hidden');
+    fadeRight?.classList.remove('is-hidden');
   };
 
   const scheduleFadeUpdate = () => {
     if (!frame) frame = requestAnimationFrame(updateFades);
   };
+
+  const jumpTo = (left) => {
+    gallery.style.scrollBehavior = 'auto';
+    gallery.scrollLeft = left;
+    requestAnimationFrame(() => gallery.style.removeProperty('scroll-behavior'));
+  };
+
+  const makeClone = (slide) => {
+    const clone = slide.cloneNode(true);
+    clone.setAttribute('aria-hidden', 'true');
+    clone.querySelectorAll('a, button, input, select, textarea, [tabindex]').forEach((element) => element.setAttribute('tabindex', '-1'));
+    return clone;
+  };
+
+  if (list && originalSlides.length > 1) {
+    const nextClones = originalSlides.map(makeClone);
+    nextClones.forEach((slide) => list.appendChild(slide));
+    [...originalSlides].reverse().forEach((slide) => list.prepend(makeClone(slide)));
+    requestAnimationFrame(() => {
+      loopStart = originalSlides[0].offsetLeft;
+      loopWidth = nextClones[0].offsetLeft - loopStart;
+      jumpTo(loopStart);
+    });
+  }
 
   gallery.addEventListener('scroll', scheduleFadeUpdate, { passive: true });
 
@@ -410,15 +416,6 @@
     gallery.scrollBy({ left: event.key === 'ArrowRight' ? step : -step, behavior: 'smooth' });
   });
 
-  const scrollOneCard = (direction) => {
-    const card = gallery.querySelector('.product-slide');
-    const step = (card?.getBoundingClientRect().width || 280) + 20;
-    gallery.scrollBy({ left: step * direction, behavior: 'smooth' });
-  };
-
-  previousButton?.addEventListener('click', () => scrollOneCard(-1));
-  nextButton?.addEventListener('click', () => scrollOneCard(1));
-
-  updateFades();
+  requestAnimationFrame(updateFades);
 })();
 </script>
