@@ -117,6 +117,7 @@ class CmsResourceController extends Controller
                 'published' => true,
                 'approved' => false,
                 'active' => true,
+                'sourcePath' => $resource === 'redirects' ? $request->query('sourcePath') : null,
             ],
             'previewUrl' => null,
         ]);

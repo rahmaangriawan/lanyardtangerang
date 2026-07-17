@@ -6,6 +6,7 @@
         'Utama' => [
             ['label' => 'Ringkasan', 'href' => route('dashboard'), 'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')],
             ['label' => 'Analitik', 'href' => route('cms.analytics'), 'icon' => 'chart', 'active' => request()->routeIs('cms.analytics')],
+            ['label' => 'Laporan 404', 'href' => route('cms.not-found-report'), 'icon' => 'chart', 'active' => request()->routeIs('cms.not-found-report')],
             ['label' => 'Portofolio', 'href' => route('cms.index', 'portfolio'), 'icon' => 'file', 'active' => $resource === 'portfolio'],
             ['label' => 'Formulir', 'href' => route('cms.index', 'inquiries'), 'icon' => 'file', 'active' => $resource === 'inquiries'],
         ],

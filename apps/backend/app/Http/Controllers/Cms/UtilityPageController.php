@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Cms;
 
 use App\Http\Controllers\Controller;
+use App\Models\NotFoundUrl;
 use App\Services\GoogleAnalyticsService;
 use App\Services\GoogleSearchConsoleService;
 use App\Support\SecureSettings;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Throwable;
 
@@ -103,5 +105,24 @@ class UtilityPageController extends Controller
         return view('cms.profile', [
             'user' => auth()->user(),
         ]);
+    }
+
+    public function notFoundReport(Request $request): View
+    {
+        $days = in_array($request->integer('days'), [7, 30, 90], true) ? $request->integer('days') : 30;
+        $search = trim((string) $request->query('q', ''));
+        $from = now()->subDays($days - 1)->toDateString();
+
+        $items = NotFoundUrl::query()
+            ->selectRaw('path, SUM(occurrences) as occurrences, MIN(firstSeenAt) as firstSeenAt, MAX(lastSeenAt) as lastSeenAt')
+            ->where('reportDate', '>=', $from)
+            ->when($search !== '', fn ($query) => $query->where('path', 'like', "%{$search}%"))
+            ->groupBy('path')
+            ->orderByDesc('occurrences')
+            ->orderByDesc('lastSeenAt')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('cms.not-found-report', compact('days', 'search', 'items'));
     }
 }

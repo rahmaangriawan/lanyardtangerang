@@ -15,6 +15,8 @@
       if (View::hasSection('seo_canonical')) { $__seoCanonical = trim($__env->yieldContent('seo_canonical')); }
       $__seoNoIndex = false;
       if (View::hasSection('seo_noindex')) { $__seoNoIndex = true; }
+      $__seoNoCanonical = false;
+      if (View::hasSection('seo_no_canonical')) { $__seoNoCanonical = true; }
       $__seoType = 'website';
       if (View::hasSection('seo_type')) { $__seoType = trim($__env->yieldContent('seo_type')); if ($__seoType === '') $__seoType = 'website'; }
       $__seoOgImage = null;
@@ -23,7 +25,7 @@
     @include('components.seo', [
       'title' => $__seoTitle ?: null,
       'description' => $__seoDesc ?: null,
-      'canonical' => $__seoCanonical ?: null,
+      'canonical' => $__seoNoCanonical ? false : ($__seoCanonical ?: null),
       'ogImage' => $__seoOgImage ?: null,
       'type' => $__seoType,
       'noindex' => $__seoNoIndex,

@@ -32,32 +32,34 @@
 
   $incomingTitle = isset($title) && $title !== '' ? $title : null;
   $incomingDesc = isset($description) && $description !== '' ? $description : null;
-  $incomingCanonical = isset($canonical) && $canonical !== '' ? $canonical : null;
+  $hasCanonical = $canonical !== false;
+  $incomingCanonical = $hasCanonical && isset($canonical) && $canonical !== '' ? $canonical : null;
   $incomingOgImage = isset($ogImage) && $ogImage !== '' ? $ogImage : null;
 
   $finalTitle = $incomingTitle ? $incomingTitle : $defaultTitle;
   $finalDesc = $incomingDesc ? $incomingDesc : $defaultDesc;
 
   // canonical: always build from $siteUrl + path, strip query string ?q, ?page, utm_, etc.
-  $rawCanonical = $incomingCanonical ? $incomingCanonical : url()->current();
-  if (strpos($rawCanonical, '?') !== false) {
-    $rawCanonical = strtok($rawCanonical, '?');
-  }
-  $parsedPath = parse_url($rawCanonical, PHP_URL_PATH);
-  if ($parsedPath === false || $parsedPath === null || $parsedPath === '') {
-    $parsedPath = '/';
-  }
-  $parsedPath = '/' . trim($parsedPath, '/');
-  if ($parsedPath === '//') { $parsedPath = '/'; }
-  // special handling: if path is empty, treat as home
-  if ($parsedPath === '/' || $parsedPath === '') {
-    $finalCanonical = $siteUrl . '/';
-  } else {
-    $finalCanonical = $siteUrl . rtrim($parsedPath, '/');
-  }
-  // edge: ensure home always trailing slash
-  if ($finalCanonical === $siteUrl) {
-    $finalCanonical = $siteUrl . '/';
+  $finalCanonical = '';
+  if ($hasCanonical) {
+    $rawCanonical = $incomingCanonical ? $incomingCanonical : url()->current();
+    if (strpos($rawCanonical, '?') !== false) {
+      $rawCanonical = strtok($rawCanonical, '?');
+    }
+    $parsedPath = parse_url($rawCanonical, PHP_URL_PATH);
+    if ($parsedPath === false || $parsedPath === null || $parsedPath === '') {
+      $parsedPath = '/';
+    }
+    $parsedPath = '/' . trim($parsedPath, '/');
+    if ($parsedPath === '//') { $parsedPath = '/'; }
+    if ($parsedPath === '/' || $parsedPath === '') {
+      $finalCanonical = $siteUrl . '/';
+    } else {
+      $finalCanonical = $siteUrl . rtrim($parsedPath, '/');
+    }
+    if ($finalCanonical === $siteUrl) {
+      $finalCanonical = $siteUrl . '/';
+    }
   }
 
   $ogImagePath = \App\Support\AssetUrl::relative(
@@ -105,7 +107,9 @@
 {{-- Base SEO --}}
 <title>{{ $finalTitleDisplay }}</title>
 <meta name="description" content="{{ $trimmedDesc }}">
+@if($hasCanonical)
 <link rel="canonical" href="{{ $finalCanonical }}">
+@endif
 <meta name="robots" content="{{ $robotsContent }}">
 <meta name="author" content="Lanyard Tangerang">
 <meta name="theme-color" content="#0f172a">
@@ -115,7 +119,9 @@
 <meta property="og:locale" content="id_ID">
 <meta property="og:title" content="{{ $finalTitleDisplay }}">
 <meta property="og:description" content="{{ $trimmedDesc }}">
+@if($hasCanonical)
 <meta property="og:url" content="{{ $finalCanonical }}">
+@endif
 <meta property="og:type" content="{{ $type }}">
 <meta property="og:image" content="{{ $finalImage }}">
 <meta property="og:image:width" content="1200">

@@ -250,6 +250,7 @@ Route::redirect('/login/blackout', '/login');
 Route::middleware(['auth', 'verified', 'admin'])->prefix('kawruh')->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/analytics', [UtilityPageController::class, 'analytics'])->name('cms.analytics');
+    Route::get('/not-found-urls', [UtilityPageController::class, 'notFoundReport'])->name('cms.not-found-report');
     Route::redirect('/blog', '/kawruh/posts');
     Route::redirect('/categories-produk', '/kawruh/categories?type=PRODUCT');
     Route::redirect('/categories-blog', '/kawruh/categories?type=BLOG');
