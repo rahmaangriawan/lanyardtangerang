@@ -45,8 +45,8 @@
     <link rel="manifest" href="/site.webmanifest">
 
     {{-- Preload Critical Fonts --}}
-    <link rel="preload" href="/assets/fonts/Geist-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="/assets/fonts/Geist-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/font-assets/geist-400" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/font-assets/geist-700" as="font" type="font/woff2" crossorigin>
 
     {{-- Bundled CSS: Tailwind + colors + global + header + hero + fonts (minified) --}}
     @php

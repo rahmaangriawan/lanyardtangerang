@@ -54,7 +54,7 @@ class PerformanceTest extends TestCase
 
     public function test_woff2_delivery_has_the_correct_mime_and_immutable_cache(): void
     {
-        $response = $this->get('/assets/fonts/Geist-400.woff2');
+        $response = $this->get('/font-assets/geist-400');
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'font/woff2');

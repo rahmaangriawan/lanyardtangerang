@@ -43,7 +43,7 @@
         if (color) document.documentElement.style.setProperty("--meridian-accent", color);
       })();
     </script>
-    <link rel="preload" href="/assets/fonts/Inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/font-assets/inter-latin" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/css/inter.css?v={{ filemtime(public_path('css/inter.css')) }}" />
     <link rel="stylesheet" href="/vendor/meridian/assets/css/style.css" />
     <style>

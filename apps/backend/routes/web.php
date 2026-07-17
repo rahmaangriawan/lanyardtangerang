@@ -86,11 +86,11 @@ Route::get('/', function () {
         ->header('Cache-Control', 'public, no-cache, must-revalidate');
 })->withoutMiddleware($statelessPublicMiddleware)->name('home');
 
-Route::get('/assets/fonts/{font}', function (string $font) {
+Route::get('/font-assets/{font}', function (string $font) {
     $path = match ($font) {
-        'Geist-400.woff2' => public_path('fonts/geist/Geist-400.woff2'),
-        'Geist-700.woff2' => public_path('fonts/geist/Geist-700.woff2'),
-        'Inter-latin.woff2' => public_path('fonts/inter/Inter-latin.woff2'),
+        'geist-400' => public_path('fonts/geist/Geist-400.woff2'),
+        'geist-700' => public_path('fonts/geist/Geist-700.woff2'),
+        'inter-latin' => public_path('fonts/inter/Inter-latin.woff2'),
         default => null,
     };
 
@@ -100,7 +100,7 @@ Route::get('/assets/fonts/{font}', function (string $font) {
         'Content-Type' => 'font/woff2',
         'Cache-Control' => 'public, max-age=31536000, immutable',
     ]);
-})->where('font', '[A-Za-z0-9.-]+')->withoutMiddleware($statelessPublicMiddleware)->name('assets.fonts');
+})->where('font', '[a-z0-9-]+')->withoutMiddleware($statelessPublicMiddleware)->name('assets.fonts');
 
 Route::get('/media/{path}', fn (string $path) => $serveLegacyPublicAsset('media', $path))->where('path', '.*');
 Route::get('/uploads/{path}', fn (string $path) => $serveLegacyPublicAsset('uploads', $path))->where('path', '.*');
