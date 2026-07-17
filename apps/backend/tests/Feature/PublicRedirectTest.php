@@ -32,6 +32,14 @@ class PublicRedirectTest extends TestCase
             ->assertOk()
             ->assertSee('Redirect 301')
             ->assertSee('/kawruh/redirects');
+
+        $this->actingAs($admin)
+            ->get('/kawruh/redirects/create')
+            ->assertOk()
+            ->assertSee('Simpan Redirect')
+            ->assertDontSee('General')
+            ->assertDontSee('>SEO<', false)
+            ->assertDontSee('/vendor/quill/quill.js');
     }
 
     public function test_admin_can_create_normalized_redirect_and_override_an_existing_page(): void

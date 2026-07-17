@@ -4,6 +4,7 @@
 
 @php
     $isEdit = (bool) $item;
+    $isSimpleForm = $resource === 'redirects';
     $formAction = $isEdit ? route('cms.update', [$resource, $item->id]) : route('cms.store', $resource);
     $sidebarNames = ['published', 'approved', 'createdAt', 'categoryId', 'featuredImage', 'imageUrl', 'logoUrl', 'metaTitle', 'metaDescription'];
     $seoNames = ['metaTitle', 'metaDescription'];
@@ -36,6 +37,7 @@
 @endphp
 
 @push('head')
+  @unless($isSimpleForm)
   <link rel="stylesheet" href="/vendor/quill/quill.snow.css" />
   <style>
     .editor-tabs {
@@ -603,6 +605,7 @@
       }
     }
   </style>
+  @endunless
 @endpush
 
 @section('content')
@@ -623,7 +626,7 @@
         @method('PATCH')
       @endif
 
-      <section class="page__section col-span-12 xl:col-span-8">
+      <section class="page__section col-span-12 {{ $isSimpleForm ? '' : 'xl:col-span-8' }}">
   <div class="card">
     <div class="card__body">
             <div class="grid grid-cols-12 gap-4">
@@ -727,9 +730,15 @@
               @endforeach
             </div>
           </div>
+          @if($isSimpleForm)
+            <div class="card__footer">
+              <button class="button button--primary ms-auto" type="submit">Simpan Redirect</button>
+            </div>
+          @endif
         </div>
       </section>
 
+      @unless($isSimpleForm)
       <aside class="page__section col-span-12 xl:col-span-4">
         <div class="card">
           <div class="editor-tabs">
@@ -827,9 +836,11 @@
           </div>
         </div>
       </aside>
+      @endunless
     </form>
   </div>
 
+  @unless($isSimpleForm)
   <div class="media-modal" data-media-modal>
     <div class="media-modal__panel">
       <div class="card mb-0">
@@ -958,9 +969,11 @@
     <button type="button" data-table-action="delete-cell">Kosongkan cell</button>
     <button type="button" data-table-action="delete-table">Hapus tabel</button>
   </div>
+  @endunless
 @endsection
 
 @push('scripts')
+  @unless($isSimpleForm)
   <script src="/vendor/quill/quill.js"></script>
   <script>
     (function () {
@@ -1707,4 +1720,5 @@
       updatePublishSubmit();
     })();
   </script>
+  @endunless
 @endpush
