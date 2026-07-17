@@ -7,10 +7,6 @@
             ['label' => 'Ringkasan', 'href' => route('dashboard'), 'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')],
             ['label' => 'Analitik', 'href' => route('cms.analytics'), 'icon' => 'chart', 'active' => request()->routeIs('cms.analytics')],
         ],
-        'Lainnya' => [
-            ['label' => 'Portofolio', 'href' => route('cms.index', 'portfolio'), 'icon' => 'file', 'active' => $resource === 'portfolio'],
-            ['label' => 'Formulir', 'href' => route('cms.index', 'inquiries'), 'icon' => 'file', 'active' => $resource === 'inquiries'],
-        ],
         'Blog' => [
             ['label' => 'Pos', 'href' => route('cms.index', 'posts'), 'icon' => 'file', 'active' => $resource === 'posts'],
             ['label' => 'Kategori Blog', 'href' => route('cms.index', 'categories') . '?type=BLOG', 'icon' => 'file', 'active' => $resource === 'categories' && $categoryType !== 'PRODUCT'],
@@ -22,6 +18,10 @@
             ['label' => 'All Produk', 'href' => route('cms.index', 'products'), 'icon' => 'product', 'active' => $resource === 'products'],
             ['label' => 'Kategori Produk', 'href' => route('cms.index', 'categories') . '?type=PRODUCT', 'icon' => 'file', 'active' => $resource === 'categories' && $categoryType === 'PRODUCT'],
             ['label' => 'Orders', 'href' => route('cms.index', 'orders'), 'icon' => 'product', 'active' => $resource === 'orders'],
+        ],
+        'Lainnya' => [
+            ['label' => 'Portofolio', 'href' => route('cms.index', 'portfolio'), 'icon' => 'file', 'active' => $resource === 'portfolio'],
+            ['label' => 'Formulir', 'href' => route('cms.index', 'inquiries'), 'icon' => 'file', 'active' => $resource === 'inquiries'],
         ],
         'Sistem' => [
             ['label' => 'Laporan 404', 'href' => route('cms.not-found-report'), 'icon' => 'chart', 'active' => request()->routeIs('cms.not-found-report')],
