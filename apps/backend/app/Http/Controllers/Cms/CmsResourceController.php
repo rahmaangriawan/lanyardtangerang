@@ -16,6 +16,7 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Support\HtmlSanitizer;
 use App\Support\ArticlePreview;
+use App\Support\MediaThumbnail;
 use App\Support\SecureSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\View\View;
@@ -46,7 +47,15 @@ class CmsResourceController extends Controller
         $query = $config['model']::query();
 
         foreach ($config['with'] ?? [] as $relation) {
-            $query->with($relation);
+            $relationColumns = collect($config['columns'] ?? [])
+                ->pluck('key')
+                ->filter(fn ($key) => is_string($key) && str_starts_with($key, $relation.'.'))
+                ->map(fn (string $key) => substr($key, strlen($relation) + 1))
+                ->push('id')
+                ->unique()
+                ->values()
+                ->all();
+            $query->with([$relation => fn ($relationQuery) => $relationQuery->select($relationColumns)]);
         }
 
         $search = trim((string) $request->query('q', ''));
@@ -70,6 +79,8 @@ class CmsResourceController extends Controller
 
         $sortColumn = $config['sort'][0] ?? 'id';
         $sortDirection = $config['sort'][1] ?? 'desc';
+        $query->select($this->indexColumns($config));
+        $indexOptionKeys = in_array('categoryId', $config['fillable'] ?? [], true) ? ['categories'] : [];
 
         return view('cms.index', [
             'resource' => $resource,
@@ -84,7 +95,7 @@ class CmsResourceController extends Controller
                 'type' => $request->query('type'),
                 'published' => $request->query('published'),
             ],
-            'options' => $this->options($config),
+            'options' => $this->options($indexOptionKeys),
             'productSync' => $resource === 'products' ? $this->productSyncStatus() : null,
         ]);
     }
@@ -97,7 +108,7 @@ class CmsResourceController extends Controller
             'resource' => $resource,
             'config' => Arr::except($config, ['model']),
             'item' => null,
-            'options' => $this->options($config),
+            'options' => $this->options($this->optionKeys($config['fields'] ?? [])),
             'defaults' => [
                 'type' => $request->query('type'),
                 'published' => true,
@@ -153,7 +164,7 @@ class CmsResourceController extends Controller
             'resource' => $resource,
             'config' => Arr::except($config, ['model']),
             'item' => $item,
-            'options' => $this->options($config),
+            'options' => $this->options($this->optionKeys($config['fields'] ?? [])),
             'defaults' => [],
             'previewUrl' => $resource === 'posts' ? ArticlePreview::url($item) : null,
         ]);
@@ -216,6 +227,7 @@ class CmsResourceController extends Controller
             if ($item->disk_path !== '') {
                 Storage::disk('public')->delete($item->disk_path);
             }
+            Storage::disk('public')->delete(MediaThumbnail::path($item));
         }
 
         $item->delete();
@@ -259,6 +271,7 @@ class CmsResourceController extends Controller
             'unapprove' => $this->bulkStatus($query, $config, false, 'approved'),
             'category' => $this->bulkCategory($query, $config, $validated['categoryId'] ?? null),
         };
+        $this->invalidateHomeCache($resource);
 
         return back()->with('success', "{$count} data berhasil diproses.");
     }
@@ -270,6 +283,7 @@ class CmsResourceController extends Controller
                 if ($item->disk_path !== '') {
                     Storage::disk('public')->delete($item->disk_path);
                 }
+                Storage::disk('public')->delete(MediaThumbnail::path($item));
             }
 
             $item->delete();
@@ -286,6 +300,19 @@ class CmsResourceController extends Controller
     {
         abort_unless(in_array('categoryId', $config['fillable'], true), 404);
         $query->update(['categoryId' => $categoryId]);
+    }
+
+    private function invalidateHomeCache(string $resource): void
+    {
+        $key = match ($resource) {
+            'products' => 'home_products',
+            'posts' => 'home_posts',
+            default => null,
+        };
+
+        if ($key !== null) {
+            Cache::store(config('cache.public_store', 'file'))->forget($key);
+        }
     }
 
     private function validated(Request $request, array $config, ?Model $item = null): array
@@ -366,13 +393,18 @@ class CmsResourceController extends Controller
             ]);
         }
 
-        return Media::create([
+        $media = Media::create([
             'filename' => $file->getClientOriginalName(),
             'filepath' => $path,
             'mimetype' => $file->getMimeType() ?: 'application/octet-stream',
             'size' => $file->getSize(),
             'url' => Storage::disk('public')->url($path),
         ]);
+
+        MediaThumbnail::generate($media);
+        MediaThumbnail::generateResponsive($media);
+
+        return $media;
     }
 
     private function mediaIndex(Request $request, array $config): View
@@ -410,11 +442,9 @@ class CmsResourceController extends Controller
                 'q' => $search,
                 'file_type' => $type,
             ],
-            'stats' => [
-                'all' => Media::count(),
-                'image' => Media::query()->where('mimetype', 'like', 'image/%')->count(),
-                'pdf' => Media::query()->where('mimetype', 'application/pdf')->count(),
-            ],
+            'stats' => (array) Media::query()->selectRaw(
+                "COUNT(*) AS `all`, SUM(CASE WHEN mimetype LIKE 'image/%' THEN 1 ELSE 0 END) AS image, SUM(CASE WHEN mimetype = 'application/pdf' THEN 1 ELSE 0 END) AS pdf"
+            )->first()?->getAttributes(),
         ]);
     }
 
@@ -425,13 +455,14 @@ class CmsResourceController extends Controller
             ->flatMap(fn (array $group) => collect($group['fields'])->pluck('key'))
             ->values()
             ->all();
-        $settings = Setting::query()
+        $settingRows = Setting::query()
             ->orderBy('key')
-            ->get()
-            ->pluck('value', 'key')
-            ->all();
+            ->get(['id', 'key', 'value']);
+        $settings = $settingRows->pluck('value', 'key')->all();
         $secretConfigured = collect(SecureSettings::SECRET_KEYS)
-            ->mapWithKeys(fn (string $key) => [$key => SecureSettings::get($key) !== ''])
+            ->mapWithKeys(fn (string $key) => [
+                $key => SecureSettings::decrypt($key, $settings[$key] ?? '') !== '',
+            ])
             ->all();
 
         foreach (SecureSettings::SECRET_KEYS as $secretKey) {
@@ -456,10 +487,9 @@ class CmsResourceController extends Controller
             'settings' => $settings,
             'secretConfigured' => $secretConfigured,
             'seoAutoLinks' => $seoAutoLinks,
-            'rawSettings' => Setting::query()
-                ->whereNotIn('key', $knownKeys)
-                ->orderBy('key')
-                ->get(),
+            'rawSettings' => $settingRows
+                ->reject(fn (Setting $setting) => in_array($setting->key, $knownKeys, true))
+                ->values(),
         ]);
     }
 
@@ -546,25 +576,66 @@ class CmsResourceController extends Controller
             ->with('success', "{$config['singular']} berhasil disimpan.");
     }
 
-    private function options(array $config): array
+    private function options(array $keys): array
     {
-        return [
-            'categories' => Category::query()
+        $options = [];
+
+        if (in_array('categories', $keys, true)) {
+            $options['categories'] = Category::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'type'])
                 ->map(fn (Category $category) => [
                     'value' => $category->id,
                     'label' => "{$category->name} ({$category->type})",
-                ]),
-            'posts' => Post::query()
+                ]);
+        }
+
+        if (in_array('posts', $keys, true)) {
+            $options['posts'] = Post::query()
                 ->orderBy('title')
                 ->get(['id', 'title'])
-                ->map(fn (Post $post) => ['value' => $post->id, 'label' => $post->title]),
-            'cityPages' => CityPage::query()
+                ->map(fn (Post $post) => ['value' => $post->id, 'label' => $post->title]);
+        }
+
+        if (in_array('cityPages', $keys, true)) {
+            $options['cityPages'] = CityPage::query()
                 ->orderBy('title')
                 ->get(['id', 'title'])
-                ->map(fn (CityPage $page) => ['value' => $page->id, 'label' => $page->title]),
-        ];
+                ->map(fn (CityPage $page) => ['value' => $page->id, 'label' => $page->title]);
+        }
+
+        return $options;
+    }
+
+    private function optionKeys(array $fields): array
+    {
+        return collect($fields)
+            ->pluck('optionsKey')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function indexColumns(array $config): array
+    {
+        $columns = collect($config['columns'] ?? [])
+            ->pluck('key')
+            ->filter(fn ($key) => is_string($key) && ! str_contains($key, '.'))
+            ->push('id')
+            ->push($config['sort'][0] ?? 'id');
+
+        foreach ($config['with'] ?? [] as $relation) {
+            $columns->push($relation.'Id');
+        }
+
+        foreach (['featuredImage', 'imageUrl', 'logoUrl'] as $thumbnailColumn) {
+            if (in_array($thumbnailColumn, $config['fillable'] ?? [], true)) {
+                $columns->push($thumbnailColumn);
+            }
+        }
+
+        return $columns->filter()->unique()->values()->all();
     }
 
     private function productSyncStatus(): array

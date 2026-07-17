@@ -3,11 +3,18 @@
 namespace App\Models;
 
 use App\Support\AssetUrl;
+use App\Support\MediaThumbnail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class Media extends Model
 {
+    private ?string $resolvedPreviewUrl = null;
+
+    private ?string $resolvedPreviewSrc = null;
+
+    private ?string $resolvedThumbnailSrc = null;
+
     public const CREATED_AT = 'createdAt';
     public const UPDATED_AT = null;
 
@@ -40,10 +47,14 @@ class Media extends Model
      */
     public function getPreviewUrlAttribute(): string
     {
+        if ($this->resolvedPreviewUrl !== null) {
+            return $this->resolvedPreviewUrl;
+        }
+
         $rawPath = ltrim(str_replace('\\', '/', trim((string) $this->filepath)), '/');
 
         if (str_starts_with($rawPath, 'public/')) {
-            return '/'.substr($rawPath, strlen('public/'));
+            return $this->resolvedPreviewUrl = '/'.substr($rawPath, strlen('public/'));
         }
 
         if (str_starts_with($rawPath, 'media/')) {
@@ -62,36 +73,49 @@ class Media extends Model
             }
 
             if ($storedFiles !== []) {
-                return '/storage/'.implode('/', array_map('rawurlencode', explode('/', $storedFiles[0])));
+                return $this->resolvedPreviewUrl = '/storage/'.implode('/', array_map('rawurlencode', explode('/', $storedFiles[0])));
             }
 
-            return '/'.$rawPath;
+            return $this->resolvedPreviewUrl = '/'.$rawPath;
         }
 
         $path = $this->disk_path;
 
         if ($path !== '') {
-            return '/storage/'.implode('/', array_map('rawurlencode', explode('/', $path)));
+            return $this->resolvedPreviewUrl = '/storage/'.implode('/', array_map('rawurlencode', explode('/', $path)));
         }
 
         $url = trim((string) $this->url);
 
         if ($url !== '') {
-            return $url;
+            return $this->resolvedPreviewUrl = $url;
         }
 
-        return Storage::disk('public')->url((string) $this->filename);
+        return $this->resolvedPreviewUrl = Storage::disk('public')->url((string) $this->filename);
     }
 
     public function getPreviewSrcAttribute(): string
     {
+        if ($this->resolvedPreviewSrc !== null) {
+            return $this->resolvedPreviewSrc;
+        }
+
         $url = $this->preview_url;
         $version = implode('-', [
             (string) ($this->getKey() ?: 'new'),
             (string) ($this->size ?: 0),
         ]);
 
-        return $url.(str_contains($url, '?') ? '&' : '?').'v='.rawurlencode($version);
+        return $this->resolvedPreviewSrc = $url.(str_contains($url, '?') ? '&' : '?').'v='.rawurlencode($version);
+    }
+
+    public function getThumbnailSrcAttribute(): string
+    {
+        if ($this->resolvedThumbnailSrc !== null) {
+            return $this->resolvedThumbnailSrc;
+        }
+
+        return $this->resolvedThumbnailSrc = MediaThumbnail::url($this) ?: $this->preview_src;
     }
 
     public function getDiskPathAttribute(): string

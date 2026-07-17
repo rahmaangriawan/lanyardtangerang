@@ -12,9 +12,8 @@
         if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
       })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
+    <link rel="preload" href="/fonts/inter/Inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/css/inter.css?v={{ filemtime(public_path('css/inter.css')) }}" />
     <link rel="stylesheet" href="/vendor/meridian/assets/css/style.css" />
     <style>
       .auth-shell {

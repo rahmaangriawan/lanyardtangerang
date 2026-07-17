@@ -43,9 +43,8 @@
         if (color) document.documentElement.style.setProperty("--meridian-accent", color);
       })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <link rel="preload" href="/fonts/inter/Inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/css/inter.css?v={{ filemtime(public_path('css/inter.css')) }}" />
     <link rel="stylesheet" href="/vendor/meridian/assets/css/style.css" />
     <style>
       :root {
@@ -317,7 +316,7 @@
     </div>
 
     <script src="/vendor/meridian/assets/js/app-shell.js"></script>
-    <script src="/vendor/meridian/assets/js/table-select.js"></script>
+    @stack('page-scripts')
     <style>
       .flash-toast {
         position: fixed;

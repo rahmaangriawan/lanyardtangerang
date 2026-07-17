@@ -274,7 +274,7 @@
                 <div class="card__body">
                   <div class="media-card__preview">
                     @if($isImage)
-                      <img src="{{ $item->preview_src }}" alt="{{ $item->filename }}" loading="lazy" />
+                      <img src="{{ $item->thumbnail_src }}" alt="{{ $item->filename }}" loading="lazy" />
                     @else
                       <div class="text-center">
                         <div class="mx-auto media-card__icon">

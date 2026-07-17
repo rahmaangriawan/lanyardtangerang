@@ -3,7 +3,7 @@
   use App\Models\Post;
   use Illuminate\Support\Facades\Cache;
 
-  $posts = Cache::remember('home_posts', 3600, function () {
+  $posts = Cache::store(config('cache.public_store', 'file'))->remember('home_posts', 3600, function () {
     return Post::with('category')->where('published', true)->orderBy('createdAt', 'desc')->take(3)->get();
   });
 
@@ -91,7 +91,7 @@
           <a href="/blog/{{ $slug }}" class="blog-editorial-card">
             <div class="blog-editorial-thumb">
               @if($image)
-                <img alt="{{ $title }} - Lanyard custom Tangerang {{ $cat }}" class="blog-editorial-img" src="{{ $image }}" loading="lazy" decoding="async" width="640" height="400" />
+                <img alt="{{ $title }} - Lanyard custom Tangerang {{ $cat }}" class="blog-editorial-img" src="{{ $image }}" @if($srcset = \App\Support\ResponsiveImage::srcset($image)) srcset="{{ $srcset }}" sizes="(min-width: 1024px) 405px, (min-width: 700px) 50vw, 100vw" @endif loading="lazy" decoding="async" width="640" height="400" />
               @else
                 <div class="blog-editorial-img-fallback" aria-hidden="true">
                   <span class="material-symbols-outlined">photo_library</span>

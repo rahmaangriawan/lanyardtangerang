@@ -375,47 +375,6 @@
   </div>
 @endsection
 
-@push('scripts')
-  <script>
-    (function () {
-      var selectAll = document.querySelector('[data-select-all]');
-      var bulkPanel = document.querySelector('[data-bulk-panel]');
-      var selectedCount = document.querySelector('[data-selected-count]');
-      if (!selectAll) return;
-
-      function rowCheckboxes() {
-        return Array.from(document.querySelectorAll('[data-row-checkbox]'));
-      }
-
-      function updateBulkPanel() {
-        var checkboxes = rowCheckboxes();
-        var checked = checkboxes.filter(function (checkbox) {
-          return checkbox.checked;
-        });
-
-        if (selectedCount) selectedCount.textContent = checked.length;
-        if (bulkPanel) bulkPanel.classList.toggle('is-visible', checked.length > 0);
-        selectAll.checked = checked.length > 0 && checked.length === checkboxes.length;
-        selectAll.indeterminate = checked.length > 0 && checked.length < checkboxes.length;
-      }
-
-      selectAll.addEventListener('change', function () {
-        rowCheckboxes().forEach(function (checkbox) {
-          checkbox.checked = selectAll.checked;
-          checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-        updateBulkPanel();
-      });
-
-      document.addEventListener('change', function (event) {
-        if (! event.target.matches('[data-row-checkbox]')) {
-          return;
-        }
-
-        updateBulkPanel();
-      });
-
-      updateBulkPanel();
-    })();
-  </script>
+@push('page-scripts')
+  <script src="/vendor/meridian/assets/js/table-select.js" defer></script>
 @endpush

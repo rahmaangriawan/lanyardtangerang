@@ -29,5 +29,18 @@ class MediaTest extends TestCase
             '/storage/1791/lanyard-custom-bogor.webp?v=56-0',
             $media->preview_src,
         );
+
+        Storage::disk('public')->delete('1791/lanyard-custom-bogor.webp');
+        Storage::disk('public')->put('1791/replacement.webp', 'replacement');
+        $this->assertSame(
+            '/storage/1791/lanyard-custom-bogor.webp',
+            $media->preview_url,
+            'Legacy preview lookup must be memoized once per model instance.',
+        );
+        $this->assertSame(
+            '/storage/1791/lanyard-custom-bogor.webp?v=56-0',
+            $media->thumbnail_src,
+            'Missing thumbnails must fall back to the original preview.',
+        );
     }
 }

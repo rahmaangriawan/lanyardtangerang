@@ -21,8 +21,8 @@
     {{-- Marquee container --}}
     <div data-sr="fade" data-sr-delay="100" class="logo-marquee" id="logo-marquee">
       <div class="logo-marquee__track" id="logo-track">
-        {{-- Render 4 sets for seamless looping --}}
-        @foreach ([1, 2, 3, 4] as $set)
+        {{-- Two identical sets keep the 40 second marquee seamless. --}}
+        @foreach ([1, 2] as $set)
         <div class="logo-marquee__set">
           @foreach ($logos as $logo)
           <img

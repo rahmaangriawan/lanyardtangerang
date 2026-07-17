@@ -45,25 +45,29 @@
     <link rel="manifest" href="/site.webmanifest">
 
     {{-- Preload Critical Fonts --}}
-    <link rel="preload" href="/fonts/geist/Geist-400.ttf" as="font" type="font/ttf" crossorigin>
-    <link rel="preload" href="/fonts/geist/Geist-700.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="/fonts/geist/Geist-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/geist/Geist-700.woff2" as="font" type="font/woff2" crossorigin>
 
     {{-- Bundled CSS: Tailwind + colors + global + header + hero + fonts (minified) --}}
     @php
-        $assetsVersion = \Illuminate\Support\Facades\Cache::remember('assets_version_hashes_v2', 86400, function () {
+        $publicCache = \Illuminate\Support\Facades\Cache::store(config('cache.public_store', 'file'));
+        $assetsVersion = $publicCache->remember('assets_version_hashes_v3', 86400, function () {
             $appCssPath = public_path('css/app.min.css');
             $srCssPath = public_path('vendor/scroll/scroll-reveal.css');
             $srJsPath = public_path('vendor/scroll/scroll-reveal.js');
+            $publicSiteJsPath = public_path('js/public-site.js');
             return [
                 'appCssV' => file_exists($appCssPath) ? filemtime($appCssPath) : 1,
                 'srCssV' => file_exists($srCssPath) ? filemtime($srCssPath) : 1,
                 'srJsV' => file_exists($srJsPath) ? filemtime($srJsPath) : 1,
+                'publicSiteJsV' => file_exists($publicSiteJsPath) ? filemtime($publicSiteJsPath) : 1,
             ];
         });
         $appCssV = $assetsVersion['appCssV'];
         $srCssV = $assetsVersion['srCssV'];
         $srJsV = $assetsVersion['srJsV'];
-        $inlinePublicCss = \Illuminate\Support\Facades\Cache::remember(
+        $publicSiteJsV = $assetsVersion['publicSiteJsV'];
+        $inlinePublicCss = $publicCache->remember(
             'inline_public_css_v2_'.$appCssV.'_'.$srCssV,
             86400,
             fn () => (file_get_contents(public_path('css/app.min.css')) ?: '')
@@ -103,6 +107,7 @@
     </main>
 
     @yield('scripts')
+    <script src="/js/public-site.js?v={{ $publicSiteJsV }}" defer></script>
     {{-- Scroll Reveal Engine — Mode A --}}
     <script src="/vendor/scroll/scroll-reveal.js?v={{ $srJsV }}" defer></script>
 </body>

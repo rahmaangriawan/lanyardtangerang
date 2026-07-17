@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Post;
+use App\Models\Product;
+use App\Models\Setting;
+use App\Observers\PostObserver;
+use App\Observers\ProductObserver;
+use App\Observers\SettingObserver;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Product::observe(ProductObserver::class);
+        Post::observe(PostObserver::class);
+        Setting::observe(SettingObserver::class);
+
         Vite::prefetch(concurrency: 3);
     }
 }

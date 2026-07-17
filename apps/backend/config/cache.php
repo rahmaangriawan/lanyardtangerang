@@ -18,6 +18,16 @@ return [
     'default' => env('CACHE_STORE', 'database'),
 
     /*
+    | Public rendering cache must not add database round trips. Reuse Redis
+    | when the application already uses it; otherwise keep it on local disk
+    | for this single-server CloudPanel deployment.
+    */
+    'public_store' => env(
+        'PUBLIC_CACHE_STORE',
+        env('CACHE_STORE', 'file') === 'redis' ? 'redis' : 'file'
+    ),
+
+    /*
     |--------------------------------------------------------------------------
     | Cache Stores
     |--------------------------------------------------------------------------

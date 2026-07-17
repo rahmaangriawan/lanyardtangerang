@@ -11,11 +11,18 @@ use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\User;
+use App\Http\Middleware\HandleInertiaRequests;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Http\Request;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 $serveLegacyPublicAsset = function (string $directory, string $path) {
     $rootPublic = dirname(base_path(), 2) . DIRECTORY_SEPARATOR . 'public';
@@ -64,8 +71,18 @@ $serveStorageAsset = function (string $path) {
 };
 
 Route::get('/', function () {
-    return view('pages.home');
-})->name('home');
+    return response()
+        ->view('pages.home')
+        ->header('Cache-Control', 'public, no-cache, must-revalidate');
+})->withoutMiddleware([
+    EncryptCookies::class,
+    AddQueuedCookiesToResponse::class,
+    StartSession::class,
+    ShareErrorsFromSession::class,
+    ValidateCsrfToken::class,
+    HandleInertiaRequests::class,
+    AddLinkHeadersForPreloadedAssets::class,
+])->name('home');
 
 Route::get('/media/{path}', fn (string $path) => $serveLegacyPublicAsset('media', $path))->where('path', '.*');
 Route::get('/uploads/{path}', fn (string $path) => $serveLegacyPublicAsset('uploads', $path))->where('path', '.*');

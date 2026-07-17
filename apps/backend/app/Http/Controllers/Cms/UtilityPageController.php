@@ -21,7 +21,9 @@ class UtilityPageController extends Controller
         ]);
         $propertyId = trim($settings['google_analytics_property_id'] ?? '');
         $siteUrl = trim($settings['google_search_console_site_url'] ?? '');
-        $hasCredential = trim($settings['google_service_account_json'] ?? '') !== '';
+        $credential = trim($settings['google_service_account_json'] ?? '');
+        $hasCredential = $credential !== '';
+        $credentialFingerprint = sha1($credential);
         $connections = [];
         $metrics = [];
         $integrationErrors = [];
@@ -41,7 +43,7 @@ class UtilityPageController extends Controller
 
         if ($propertyId !== '' && $hasCredential) {
             try {
-                $gaData = Cache::remember('cms.analytics.ga4.'.sha1($propertyId), now()->addMinutes(10), fn () => $analytics->fetch());
+                $gaData = Cache::remember('cms.analytics.ga4.'.sha1($propertyId.'|'.$credentialFingerprint), now()->addMinutes(10), fn () => $analytics->fetch());
                 $metrics[] = $this->metricCard('Pengguna Aktif', number_format($gaData['totals']['activeUsers'] ?? 0, 0, ',', '.'), 'GA4');
                 $metrics[] = $this->metricCard('Sesi', number_format($gaData['totals']['sessions'] ?? 0, 0, ',', '.'), 'GA4');
                 $metrics[] = $this->metricCard('Page Views', number_format($gaData['totals']['pageViews'] ?? 0, 0, ',', '.'), 'GA4');
@@ -53,7 +55,7 @@ class UtilityPageController extends Controller
 
         if ($siteUrl !== '' && $hasCredential) {
             try {
-                $gscData = Cache::remember('cms.analytics.gsc.'.sha1($siteUrl), now()->addMinutes(10), fn () => $searchConsole->fetch());
+                $gscData = Cache::remember('cms.analytics.gsc.'.sha1($siteUrl.'|'.$credentialFingerprint), now()->addMinutes(10), fn () => $searchConsole->fetch());
                 $metrics[] = $this->metricCard('Klik Organik', number_format($gscData['totals']['clicks'] ?? 0, 0, ',', '.'), 'Search Console');
                 $metrics[] = $this->metricCard('Impresi', number_format($gscData['totals']['impressions'] ?? 0, 0, ',', '.'), 'Search Console');
                 $metrics[] = $this->metricCard('Posisi Rata-rata', number_format($gscData['totals']['position'] ?? 0, 1, ',', '.'), 'Search Console');

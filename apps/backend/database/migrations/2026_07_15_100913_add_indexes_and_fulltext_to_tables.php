@@ -33,10 +33,11 @@ return new class extends Migration
             $table->index('type');
         });
 
-        // 4. Full-Text Search index menggunakan RAW SQL untuk 'description' di product dan 'content' di post
-        // Memakai DB::statement karena Schema builder kadang kurang fleksibel untuk FULLTEXT index di tabel yang sudah ada dan ada recordnya.
-        DB::statement('ALTER TABLE product ADD FULLTEXT fulltext_product_description (description)');
-        DB::statement('ALTER TABLE post ADD FULLTEXT fulltext_post_title_content (title, content)');
+        // SQLite test databases do not support MySQL FULLTEXT syntax.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE product ADD FULLTEXT fulltext_product_description (description)');
+            DB::statement('ALTER TABLE post ADD FULLTEXT fulltext_post_title_content (title, content)');
+        }
     }
 
     /**
@@ -51,7 +52,9 @@ return new class extends Migration
             $table->dropIndex(['categoryId']);
         });
 
-        DB::statement('ALTER TABLE product DROP INDEX fulltext_product_description');
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE product DROP INDEX fulltext_product_description');
+        }
 
         Schema::table('post', function (Blueprint $table) {
             $table->dropIndex(['slug']);
@@ -59,7 +62,9 @@ return new class extends Migration
             $table->dropIndex(['categoryId']);
         });
 
-        DB::statement('ALTER TABLE post DROP INDEX fulltext_post_title_content');
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement('ALTER TABLE post DROP INDEX fulltext_post_title_content');
+        }
 
         Schema::table('category', function (Blueprint $table) {
             $table->dropIndex(['slug']);

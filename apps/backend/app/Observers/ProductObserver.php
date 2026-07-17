@@ -9,9 +9,7 @@ class ProductObserver
 {
     private function clearCache(): void
     {
-        // Karena ada caching dynamic (api_products_limit_...), cara paling aman dan bersih adalah flush cache store.
-        // Jika menggunakan redis/memcached ini sangat cepat dan aman.
-        Cache::flush();
+        Cache::store(config('cache.public_store', 'file'))->forget('home_products');
     }
 
     /**

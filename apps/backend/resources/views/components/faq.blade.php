@@ -77,21 +77,3 @@
   </div>
   </div>
 </section>
-
-<script>
-  (function () {
-    const container = document.getElementById('faq-accordion');
-    if (!container) return;
-    const items = container.querySelectorAll('.faq-item');
-    items.forEach(function (item) {
-      item.addEventListener('toggle', function () {
-        if (!this.open) return;
-        items.forEach(function (other) {
-          if (other !== item && other.open) {
-            other.open = false;
-          }
-        });
-      });
-    });
-  })();
-</script>

@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @php
-    $homeSeoSettings = \Illuminate\Support\Facades\Cache::remember('home_seo_settings', 3600, function () {
+    $homeSeoSettings = \Illuminate\Support\Facades\Cache::store(config('cache.public_store', 'file'))->remember('home_seo_settings', 3600, function () {
         return \App\Models\Setting::whereIn('key', ['seo_meta_title', 'seo_meta_description'])->pluck('value', 'key')->toArray();
     });
     $homeTitle = $homeSeoSettings['seo_meta_title'] ?? 'Lanyard Tangerang | Cetak Lanyard Custom Cepat & Berkualitas';

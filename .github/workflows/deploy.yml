@@ -165,10 +165,19 @@ jobs:
 
           chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
+          # Build production caches after migrations. Route/config/view cache
+          # failures must stop the deployment instead of leaving a slow app.
+          $PHP_BIN artisan optimize
+          $PHP_BIN artisan media:thumbnails
+
           # Gagalkan deploy jika aset penting tidak sampai ke document root.
           test -f public/uploads/lanyardtangerang-logo-header.webp
           test -f public/uploads/hero-lanyard-slider-01.webp
           test -f public/uploads/cta-bg.webp
+          test -f public/js/public-site.js
+          test -f public/fonts/geist/Geist-400.woff2
+          test -f public/fonts/geist/Geist-700.woff2
+          test -f public/fonts/inter/Inter-latin.woff2
           test -f storage/app/public/uploads/blog-import/rayakan-kemenangan-dengan-custom-lanyard-lebaran-unik-ini-01-9ju4eg.webp
           test -f storage/app/public/1791/lanyard-custom-bogor.webp
           test -f storage/app/public/1765/cetak-lanyard-bogor.webp

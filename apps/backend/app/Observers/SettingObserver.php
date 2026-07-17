@@ -9,7 +9,9 @@ class SettingObserver
 {
     private function clearCache(): void
     {
-        Cache::flush();
+        $publicCache = Cache::store(config('cache.public_store', 'file'));
+        $publicCache->forget('home_seo_settings');
+        Cache::forget('seo_auto_links_runtime');
     }
 
     /**

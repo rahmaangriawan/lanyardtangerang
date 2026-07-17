@@ -22,7 +22,7 @@
 
   function setup(root) {
     var selectAll = root.querySelector('[data-select-all]');
-    var bulkbar = root.querySelector('[data-bulkbar]');
+    var bulkbar = root.querySelector('[data-bulkbar], [data-bulk-panel]');
 
     function rows() {
       return root.querySelectorAll('[data-select-row]');
@@ -41,11 +41,11 @@
         }
       });
 
-      each(document.querySelectorAll('[data-select-count]'), function (el) {
+      each(document.querySelectorAll('[data-select-count], [data-selected-count]'), function (el) {
         el.textContent = checked;
       });
 
-      if (bulkbar) bulkbar.hidden = checked === 0;
+      if (bulkbar) bulkbar.classList.toggle('is-visible', checked > 0);
 
       if (selectAll) {
         selectAll.checked = boxes.length > 0 && checked === boxes.length;

@@ -3,13 +3,11 @@
 namespace App\Observers;
 
 use App\Models\Page;
-use Illuminate\Support\Facades\Cache;
-
 class PageObserver
 {
     private function clearCache(): void
     {
-        Cache::flush();
+        // No page-level runtime cache currently depends on this model.
     }
 
     /**

@@ -71,6 +71,17 @@
       const baseRotateInline = rotInlineMatch ? rotInlineMatch[1] : '';
       return { el, speed, baseRotStr, baseRotNum, baseTx, baseRotateInline };
     });
+    const activeItems = new Set();
+    const parallaxObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        const item = items.find(candidate=>candidate.el === entry.target);
+        if (!item) return;
+        if (entry.isIntersecting) activeItems.add(item);
+        else activeItems.delete(item);
+      });
+      onScroll();
+    }, { rootMargin: '35% 0px 35% 0px' });
+    items.forEach(item=>parallaxObserver.observe(item.el));
 
     function onScroll(){
       if (ticking) return;
@@ -78,7 +89,7 @@
       requestAnimationFrame(()=>{
         // Read all geometry first, then write transforms. Mixing reads and
         // writes per element forces repeated synchronous layout recalculation.
-        const measurements = items.map(item => ({ item, rect: item.el.getBoundingClientRect() }));
+        const measurements = Array.from(activeItems, item => ({ item, rect: item.el.getBoundingClientRect() }));
         measurements.forEach(({item: {el, speed, baseRotStr, baseRotNum, baseTx, baseRotateInline}, rect})=>{
           if (el.closest && el.closest('.product-splide') && document.querySelector('.product-splide:hover')) return;
           const center = rect.top + rect.height*0.5;
@@ -116,8 +127,10 @@
     if (!inner) return;
     const MIN_W = 1000, MAX_W = 1280;
     let ticking = false;
+    let active = false;
     function upd(){
       ticking = false;
+      if (!active) return;
       const rect = inner.parentElement.getBoundingClientRect();
       const viewH = window.innerHeight;
       const totalRange = rect.height + viewH;
@@ -127,9 +140,14 @@
       inner.style.maxWidth = target + 'px';
     }
     window.addEventListener('scroll', ()=>{
+      if (!active) return;
       if (ticking) return; ticking = true; requestAnimationFrame(upd);
     }, { passive:true });
-    upd();
+    const logosObserver = new IntersectionObserver((entries)=>{
+      active = entries.some(entry=>entry.isIntersecting);
+      if (active) upd();
+    }, { rootMargin: '35% 0px 35% 0px' });
+    logosObserver.observe(inner.parentElement);
   })();
 
   /* --- 4) SERVICE HIGHLIGHTS — scroll-spy DISABLED Fase 4 per request user: cukup container masuk aja, no auto deck switch --- */
