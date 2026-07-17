@@ -8,8 +8,8 @@
         $createUrl .= '?type=' . urlencode(request('type'));
     }
 
-    $canToggle = collect($config['fields'])->contains(fn ($field) => in_array($field['name'] ?? '', ['published', 'approved'], true));
-    $statusField = collect($config['fields'])->first(fn ($field) => in_array($field['name'] ?? '', ['published', 'approved'], true))['name'] ?? null;
+    $canToggle = collect($config['fields'])->contains(fn ($field) => in_array($field['name'] ?? '', ['published', 'approved', 'active'], true));
+    $statusField = collect($config['fields'])->first(fn ($field) => in_array($field['name'] ?? '', ['published', 'approved', 'active'], true))['name'] ?? null;
     $canBulkCategory = in_array('categoryId', $config['fillable'] ?? [], true);
     $visibleColumns = collect($config['columns'])->reject(fn ($column) => ($column['key'] ?? '') === 'slug')->values();
     $primaryColumn = $visibleColumns->firstWhere('primary', true);
@@ -28,6 +28,10 @@
 
         if ($statusField === 'approved') {
             return (bool) data_get($item, $statusField) ? 'Unapprove' : 'Approve';
+        }
+
+        if ($statusField === 'active') {
+            return (bool) data_get($item, $statusField) ? 'Nonaktifkan' : 'Aktifkan';
         }
 
         return 'Ubah Status';
@@ -296,7 +300,7 @@
                   </td>
                   @foreach($visibleColumns as $column)
                     @php
-                        $value = data_get($item, $column['key']);
+                        $value = ($column['virtual'] ?? false) ? ($column['value'] ?? '') : data_get($item, $column['key']);
                         $type = $column['type'] ?? 'text';
                         $isPrimary = !empty($column['primary']);
                         $editUrl = route('cms.edit', [$resource, $item->id]);
@@ -322,6 +326,8 @@
                         {{ \Illuminate\Support\Carbon::parse($value)->translatedFormat('d M Y') }}
                       @elseif($type === 'bytes' && is_numeric($value))
                         {{ round($value / 1024) }} KB
+                      @elseif($type === 'fixed')
+                        <span class="badge badge--primary">{{ $value }}</span>
                       @else
                         <span class="line-clamp-2">{{ $value }}</span>
                       @endif
@@ -329,6 +335,14 @@
                   @endforeach
                   <td class="text-end">
                     <div class="cms-row-actions">
+                      @if($resource === 'redirects' && $canToggle)
+                        <form method="post" action="{{ route('cms.toggle', [$resource, $item->id]) }}">
+                          @csrf
+                          <button class="button button--sm button--outline button--neutral cms-icon-action" type="submit" title="{{ $toggleLabel($item) }}" aria-label="{{ $toggleLabel($item) }} {{ $primaryValue }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1.05em" height="1.05em" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a1 1 0 0 1 1 1v8a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1m5.66 3.93a1 1 0 0 1 1.41.07A9 9 0 1 1 4.93 6a1 1 0 0 1 1.48 1.34A7 7 0 1 0 17.59 7.34a1 1 0 0 1 .07-1.41"/></svg>
+                          </button>
+                        </form>
+                      @endif
                       <a class="button button--sm button--outline button--neutral cms-icon-action" href="{{ route('cms.edit', [$resource, $item->id]) }}" title="Edit {{ $config['singular'] }}" aria-label="Edit {{ $primaryValue }}">
                         <svg xmlns="http://www.w3.org/2000/svg" width="1.05em" height="1.05em" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 20h4.25L19.1 9.15l-4.25-4.25L4 15.75zm2-3.42l8.85-8.85l1.42 1.42L7.42 18H6zM19.7 8.55q.575-.575.575-1.4t-.575-1.4l-1.45-1.45q-.575-.575-1.4-.575t-1.4.575l-.6.6l4.25 4.25z"/></svg>
                       </a>

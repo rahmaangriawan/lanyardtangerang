@@ -13,13 +13,15 @@ use App\Models\Page;
 use App\Models\Portfolio;
 use App\Models\Post;
 use App\Models\Product;
+use App\Models\PublicRedirect;
 use App\Models\Setting;
-use App\Support\HtmlSanitizer;
 use App\Support\ArticlePreview;
+use App\Support\HtmlSanitizer;
 use App\Support\MediaThumbnail;
+use App\Support\PublicRedirectUrl;
 use App\Support\SecureSettings;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,8 +29,9 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 class CmsResourceController extends Controller
 {
@@ -113,6 +116,7 @@ class CmsResourceController extends Controller
                 'type' => $request->query('type'),
                 'published' => true,
                 'approved' => false,
+                'active' => true,
             ],
             'previewUrl' => null,
         ]);
@@ -240,10 +244,24 @@ class CmsResourceController extends Controller
     public function toggle(Request $request, string $resource, int $id): RedirectResponse
     {
         $config = $this->config($resource);
-        abort_unless(in_array('published', $config['fillable'], true) || in_array('approved', $config['fillable'], true), 404);
+        abort_unless(
+            in_array('published', $config['fillable'], true)
+                || in_array('approved', $config['fillable'], true)
+                || in_array('active', $config['fillable'], true),
+            404,
+        );
 
-        $field = in_array('published', $config['fillable'], true) ? 'published' : 'approved';
+        $field = match (true) {
+            in_array('published', $config['fillable'], true) => 'published',
+            in_array('approved', $config['fillable'], true) => 'approved',
+            default => 'active',
+        };
         $item = $config['model']::query()->findOrFail($id);
+
+        if ($item instanceof PublicRedirect && ! (bool) $item->active) {
+            $this->assertRedirectGraph($item->sourcePath, $item->targetUrl, true, $item, $request);
+        }
+
         $item->forceFill([$field => ! (bool) $item->{$field}])->save();
 
         return back()->with('success', 'Status berhasil diperbarui.');
@@ -317,6 +335,10 @@ class CmsResourceController extends Controller
 
     private function validated(Request $request, array $config, ?Model $item = null): array
     {
+        if (($config['key'] ?? null) === 'redirects') {
+            return $this->validatedRedirect($request, $item instanceof PublicRedirect ? $item : null);
+        }
+
         if (($config['key'] ?? null) === 'media') {
             return $request->validate(['file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,pdf', 'max:5120']]);
         }
@@ -379,6 +401,90 @@ class CmsResourceController extends Controller
         }
 
         return Arr::only($data, $config['fillable']);
+    }
+
+    private function validatedRedirect(Request $request, ?PublicRedirect $item): array
+    {
+        try {
+            $sourcePath = PublicRedirectUrl::normalizeSource((string) $request->input('sourcePath'), $request);
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'sourcePath' => $exception->getMessage(),
+            ]);
+        }
+
+        try {
+            PublicRedirectUrl::validateTarget((string) $request->input('targetUrl'));
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'targetUrl' => $exception->getMessage(),
+            ]);
+        }
+
+        if (PublicRedirectUrl::isProtected($sourcePath)) {
+            throw ValidationException::withMessages([
+                'sourcePath' => 'URL sistem, autentikasi, API, dan aset tidak boleh dialihkan.',
+            ]);
+        }
+
+        $request->merge([
+            'sourcePath' => $sourcePath,
+            'targetUrl' => trim((string) $request->input('targetUrl')),
+        ]);
+
+        $data = $request->validate([
+            'sourcePath' => [
+                'required',
+                'string',
+                'max:512',
+                Rule::unique('redirect', 'sourcePath')->ignore($item?->getKey()),
+            ],
+            'targetUrl' => ['required', 'string', 'max:2048'],
+            'active' => ['sometimes', 'boolean'],
+        ]);
+        $data['active'] = $request->boolean('active');
+
+        $this->assertRedirectGraph($data['sourcePath'], $data['targetUrl'], $data['active'], $item, $request);
+
+        return $data;
+    }
+
+    private function assertRedirectGraph(
+        string $sourcePath,
+        string $targetUrl,
+        bool $active,
+        ?PublicRedirect $item,
+        Request $request,
+    ): void {
+        $targetPath = PublicRedirectUrl::internalTargetPath($targetUrl, $request);
+        if ($targetPath === $sourcePath) {
+            throw ValidationException::withMessages([
+                'targetUrl' => 'URL tujuan tidak boleh sama dengan URL asal.',
+            ]);
+        }
+
+        if (! $active) {
+            return;
+        }
+
+        $redirects = PublicRedirect::query()
+            ->where('active', true)
+            ->when($item, fn ($query) => $query->whereKeyNot($item->getKey()))
+            ->get(['id', 'sourcePath', 'targetUrl']);
+
+        if ($targetPath !== null && $redirects->contains(fn (PublicRedirect $redirect): bool => $redirect->sourcePath === $targetPath)) {
+            throw ValidationException::withMessages([
+                'targetUrl' => 'URL tujuan sudah menjadi URL asal redirect aktif. Arahkan langsung ke tujuan akhirnya.',
+            ]);
+        }
+
+        if ($redirects->contains(
+            fn (PublicRedirect $redirect): bool => PublicRedirectUrl::internalTargetPath($redirect->targetUrl, $request) === $sourcePath
+        )) {
+            throw ValidationException::withMessages([
+                'sourcePath' => 'URL asal ini sudah menjadi tujuan redirect aktif lain sehingga akan membuat redirect chain.',
+            ]);
+        }
     }
 
     private function storeMedia(Request $request): Media
@@ -620,6 +726,7 @@ class CmsResourceController extends Controller
     private function indexColumns(array $config): array
     {
         $columns = collect($config['columns'] ?? [])
+            ->reject(fn (array $column) => (bool) ($column['virtual'] ?? false))
             ->pluck('key')
             ->filter(fn ($key) => is_string($key) && ! str_contains($key, '.'))
             ->push('id')
@@ -890,6 +997,29 @@ class CmsResourceController extends Controller
                 'fields' => [
                     ['name' => 'key', 'label' => 'Key', 'type' => 'text', 'required' => true],
                     ['name' => 'value', 'label' => 'Value', 'type' => 'textarea'],
+                ],
+            ],
+            'redirects' => [
+                'key' => 'redirects',
+                'table' => 'redirect',
+                'model' => PublicRedirect::class,
+                'title' => 'Redirect 301',
+                'singular' => 'Redirect',
+                'description' => 'Kelola pengalihan permanen URL publik lama ke halaman baru. Semua aturan menggunakan status 301.',
+                'fillable' => ['sourcePath', 'targetUrl', 'active'],
+                'search' => ['sourcePath', 'targetUrl'],
+                'sort' => ['updatedAt', 'desc'],
+                'columns' => [
+                    ['key' => 'sourcePath', 'label' => 'URL Asal', 'primary' => true],
+                    ['key' => 'targetUrl', 'label' => 'URL Tujuan'],
+                    ['key' => 'statusCode', 'label' => 'Status', 'type' => 'fixed', 'value' => '301', 'virtual' => true],
+                    ['key' => 'active', 'label' => 'Aktif', 'type' => 'boolean'],
+                    ['key' => 'updatedAt', 'label' => 'Update', 'type' => 'date'],
+                ],
+                'fields' => [
+                    ['name' => 'sourcePath', 'label' => 'URL Asal', 'type' => 'text', 'required' => true],
+                    ['name' => 'targetUrl', 'label' => 'URL Tujuan', 'type' => 'text', 'required' => true],
+                    ['name' => 'active', 'label' => 'Aktif', 'type' => 'boolean'],
                 ],
             ],
             'orders' => [

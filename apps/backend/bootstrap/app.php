@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust CloudPanel / Nginx reverse proxy
         $middleware->trustProxies(at: '*');
 
+        $middleware->prepend(\App\Http\Middleware\HandlePublicRedirects::class);
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
         $middleware->web(append: [

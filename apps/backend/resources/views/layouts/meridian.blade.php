@@ -23,6 +23,7 @@
         ],
         'Sistem' => [
             ['label' => 'Media Library', 'href' => route('cms.index', 'media'), 'icon' => 'media', 'active' => $resource === 'media'],
+            ['label' => 'Redirect', 'href' => route('cms.index', 'redirects'), 'icon' => 'file', 'active' => $resource === 'redirects'],
             ['label' => 'CMS Settings', 'href' => route('cms.index', 'settings'), 'icon' => 'settings', 'active' => $resource === 'settings'],
             ['label' => 'Profil Saya', 'href' => route('cms.profile'), 'icon' => 'file', 'active' => request()->routeIs('cms.profile')],
         ],
