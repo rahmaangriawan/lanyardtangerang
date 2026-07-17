@@ -190,6 +190,13 @@
         margin-top: .35rem;
       }
 
+      .auth-turnstile {
+        min-height: 65px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+      }
+
       .auth-submit {
         width: 100%;
         min-height: 3.25rem;
@@ -290,6 +297,12 @@
                 @endif
               </div>
 
+              @if($turnstileEnabled)
+                <div class="auth-turnstile">
+                  <div class="cf-turnstile" data-sitekey="{{ $turnstileSiteKey }}" data-theme="light" data-language="id"></div>
+                </div>
+              @endif
+
               <div class="auth-actions">
                 <button class="button button--primary auth-submit" type="submit">Masuk Dashboard</button>
               </div>
@@ -300,5 +313,8 @@
     </main>
 
     <script src="/vendor/meridian/assets/js/theme.js"></script>
+    @if($turnstileEnabled)
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @endif
   </body>
 </html>

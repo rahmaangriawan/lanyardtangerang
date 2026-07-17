@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Support\LoginTurnstile;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,6 +31,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            'cf-turnstile-response' => ['nullable', 'string'],
         ];
     }
 
@@ -41,6 +43,7 @@ class LoginRequest extends FormRequest
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
+        $this->validateTurnstile();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
@@ -51,6 +54,21 @@ class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    private function validateTurnstile(): void
+    {
+        $turnstile = LoginTurnstile::config();
+        if (! $turnstile['enabled']) {
+            return;
+        }
+
+        $token = trim((string) $this->input('cf-turnstile-response', ''));
+        if (! LoginTurnstile::verify($token, $this->ip(), $turnstile['secretKey'])) {
+            throw ValidationException::withMessages([
+                'cf-turnstile-response' => 'Verifikasi keamanan gagal. Centang Turnstile lalu coba lagi.',
+            ]);
+        }
     }
 
     /**

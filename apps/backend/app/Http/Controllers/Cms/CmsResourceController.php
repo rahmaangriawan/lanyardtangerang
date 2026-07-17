@@ -984,6 +984,7 @@ class CmsResourceController extends Controller
                 'description' => 'Turnstile dan OTP untuk proteksi form/login.',
                 'fields' => [
                     ['key' => 'turnstile_homepage_enabled', 'label' => 'Turnstile Homepage Enabled', 'type' => 'select', 'options' => ['false' => 'Nonaktif', 'true' => 'Aktif']],
+                    ['key' => 'turnstile_login_enabled', 'label' => 'Turnstile Login Enabled', 'type' => 'select', 'options' => ['false' => 'Nonaktif', 'true' => 'Aktif']],
                     ['key' => 'turnstile_site_key', 'label' => 'Turnstile Site Key', 'type' => 'text'],
                     ['key' => 'turnstile_secret_key', 'label' => 'Turnstile Secret Key', 'type' => 'textarea'],
                     ['key' => 'otp_verify_url', 'label' => 'OTP Verify URL', 'type' => 'text'],

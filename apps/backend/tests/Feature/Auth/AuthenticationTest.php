@@ -3,7 +3,9 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Support\SecureSettings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -66,5 +68,55 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
         $response->assertRedirect('/');
+    }
+
+    public function test_login_screen_renders_turnstile_when_enabled(): void
+    {
+        SecureSettings::put('turnstile_login_enabled', 'true');
+        SecureSettings::put('turnstile_site_key', 'test-site-key');
+        SecureSettings::put('turnstile_secret_key', 'test-secret-key');
+
+        $this->get('/login')
+            ->assertOk()
+            ->assertSee('cf-turnstile', false)
+            ->assertSee('test-site-key', false)
+            ->assertSee('https://challenges.cloudflare.com/turnstile/v0/api.js', false)
+            ->assertDontSee('test-secret-key', false);
+    }
+
+    public function test_login_is_rejected_when_turnstile_is_missing(): void
+    {
+        $user = User::factory()->create();
+        SecureSettings::put('turnstile_login_enabled', 'true');
+        SecureSettings::put('turnstile_site_key', 'test-site-key');
+        SecureSettings::put('turnstile_secret_key', 'test-secret-key');
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('cf-turnstile-response');
+
+        $this->assertGuest();
+    }
+
+    public function test_user_can_login_after_turnstile_verification_succeeds(): void
+    {
+        Http::fake([
+            'challenges.cloudflare.com/turnstile/v0/siteverify' => Http::response(['success' => true]),
+        ]);
+        $user = User::factory()->create();
+        SecureSettings::put('turnstile_login_enabled', 'true');
+        SecureSettings::put('turnstile_site_key', 'test-site-key');
+        SecureSettings::put('turnstile_secret_key', 'test-secret-key');
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+            'cf-turnstile-response' => 'valid-token',
+        ])->assertRedirect('/dashboard');
+
+        $this->assertAuthenticatedAs($user);
+        Http::assertSent(fn ($request) => $request['secret'] === 'test-secret-key'
+            && $request['response'] === 'valid-token');
     }
 }
