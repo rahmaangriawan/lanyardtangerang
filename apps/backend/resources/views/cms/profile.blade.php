@@ -3,7 +3,12 @@
 @section('title', 'Profil Saya')
 
 @php
-  $authorBaseUrl = rtrim(config('app.frontend_url', env('ASTRO_FRONTEND_URL', 'http://localhost:4321')), '/').'/penulis/';
+  $authorRoutePlaceholder = '__author_slug__';
+  $authorRouteTemplate = route('blog.author', ['slug' => $authorRoutePlaceholder]);
+  $authorBaseUrl = str_replace($authorRoutePlaceholder, '', $authorRouteTemplate);
+  $authorPublicUrl = $user->slug
+    ? route('blog.author', ['slug' => $user->slug])
+    : $authorBaseUrl.'nama-penulis';
 @endphp
 
 @push('head')
@@ -71,7 +76,7 @@
               </div>
               <div class="author-profile-slug">
                 <span class="text-sm font-semibold">URL profil publik</span>
-                <code data-author-profile-url>{{ $authorBaseUrl }}{{ $user->slug ?: 'nama-penulis' }}</code>
+                <code data-author-profile-url>{{ $authorPublicUrl }}</code>
                 <span class="text-xs text-muted-foreground">Slug dibuat otomatis dari nama ketika profil disimpan.</span>
               </div>
               <div class="form-group">
