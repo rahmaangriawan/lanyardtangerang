@@ -6,7 +6,8 @@
         'Utama' => [
             ['label' => 'Ringkasan', 'href' => route('dashboard'), 'icon' => 'dashboard', 'active' => request()->routeIs('dashboard')],
             ['label' => 'Analitik', 'href' => route('cms.analytics'), 'icon' => 'chart', 'active' => request()->routeIs('cms.analytics')],
-            ['label' => 'Laporan 404', 'href' => route('cms.not-found-report'), 'icon' => 'chart', 'active' => request()->routeIs('cms.not-found-report')],
+        ],
+        'Lainnya' => [
             ['label' => 'Portofolio', 'href' => route('cms.index', 'portfolio'), 'icon' => 'file', 'active' => $resource === 'portfolio'],
             ['label' => 'Formulir', 'href' => route('cms.index', 'inquiries'), 'icon' => 'file', 'active' => $resource === 'inquiries'],
         ],
@@ -23,6 +24,7 @@
             ['label' => 'Orders', 'href' => route('cms.index', 'orders'), 'icon' => 'product', 'active' => $resource === 'orders'],
         ],
         'Sistem' => [
+            ['label' => 'Laporan 404', 'href' => route('cms.not-found-report'), 'icon' => 'chart', 'active' => request()->routeIs('cms.not-found-report')],
             ['label' => 'Media Library', 'href' => route('cms.index', 'media'), 'icon' => 'media', 'active' => $resource === 'media'],
             ['label' => 'Redirect', 'href' => route('cms.index', 'redirects'), 'icon' => 'file', 'active' => $resource === 'redirects'],
             ['label' => 'CMS Settings', 'href' => route('cms.index', 'settings'), 'icon' => 'settings', 'active' => $resource === 'settings'],
