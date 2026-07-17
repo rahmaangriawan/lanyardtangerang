@@ -52,6 +52,17 @@ class PerformanceTest extends TestCase
         $this->assertContains(StartSession::class, app('router')->gatherRouteMiddleware($dashboardRoute));
     }
 
+    public function test_woff2_delivery_has_the_correct_mime_and_immutable_cache(): void
+    {
+        $response = $this->get('/assets/fonts/Geist-400.woff2');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'font/woff2');
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+        $this->assertStringContainsString('immutable', $cacheControl);
+        $this->assertSame([], $response->headers->getCookies());
+    }
+
     public function test_dashboard_summary_stays_within_ten_database_queries(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);

@@ -8,7 +8,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/geist/Geist-400.woff2') format('woff2');
+  src: url('/assets/fonts/Geist-400.woff2') format('woff2');
 }
 
 @font-face {
@@ -16,5 +16,5 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/geist/Geist-700.woff2') format('woff2');
+  src: url('/assets/fonts/Geist-700.woff2') format('woff2');
 }

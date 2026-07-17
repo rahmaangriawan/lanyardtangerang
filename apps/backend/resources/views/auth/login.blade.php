@@ -12,7 +12,7 @@
         if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
       })();
     </script>
-    <link rel="preload" href="/fonts/inter/Inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fonts/Inter-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/css/inter.css?v={{ filemtime(public_path('css/inter.css')) }}" />
     <link rel="stylesheet" href="/vendor/meridian/assets/css/style.css" />
     <style>
