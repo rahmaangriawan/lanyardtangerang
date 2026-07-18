@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\AuthorSlugRedirect;
 use App\Models\Category;
+use App\Models\CityPage;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Product;
@@ -121,6 +122,7 @@ Route::get('/sitemap.xml', function () use ($sitemapBaseUrl) {
         ['loc' => $base.'/page-sitemap.xml', 'label' => 'Halaman utama'],
         ['loc' => $base.'/product-sitemap.xml', 'label' => 'Produk'],
         ['loc' => $base.'/post-sitemap.xml', 'label' => 'Artikel blog'],
+        ['loc' => $base.'/city-sitemap.xml', 'label' => 'Area layanan'],
     ];
 
     return response()
@@ -181,6 +183,23 @@ Route::get('/post-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapRespon
     return $sitemapResponse($urls);
 })->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.posts');
 
+Route::get('/city-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse) {
+    $base = $sitemapBaseUrl();
+    $urls = CityPage::query()
+        ->where('published', true)
+        ->orderByDesc('updatedAt')
+        ->get(['slug', 'updatedAt'])
+        ->map(fn (CityPage $cityPage): array => [
+            'loc' => $base.'/area/'.$cityPage->slug,
+            'lastmod' => $cityPage->updatedAt,
+            'changefreq' => 'monthly',
+            'priority' => '0.7',
+        ])
+        ->all();
+
+    return $sitemapResponse($urls);
+})->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.cities');
+
 Route::get('/media/{path}', fn (string $path) => $serveLegacyPublicAsset('media', $path))->where('path', '.*');
 Route::get('/uploads/{path}', fn (string $path) => $serveLegacyPublicAsset('uploads', $path))->where('path', '.*');
 Route::get('/images/{path}', fn (string $path) => $serveLegacyPublicAsset('images', $path))->where('path', '.*');
@@ -198,7 +217,23 @@ Route::get('/produk/{slug}', function (string $slug) {
     return view('pages.produk.show', compact('product'));
 })->name('products.show');
 
-Route::view('/area', 'pages.area')->name('area');
+Route::get('/area', function () {
+    $cityPages = CityPage::query()
+        ->where('published', true)
+        ->orderBy('title')
+        ->get(['title', 'slug']);
+
+    return view('pages.area', compact('cityPages'));
+})->name('area');
+
+Route::get('/area/{slug}', function (string $slug) {
+    $cityPage = CityPage::query()
+        ->where('published', true)
+        ->where('slug', $slug)
+        ->firstOrFail();
+
+    return view('pages.area.show', compact('cityPage'));
+})->name('area.show');
 Route::view('/cara-pemesanan', 'pages.cara-pemesanan')->name('ordering');
 Route::view('/daftar-harga', 'pages.daftar-harga')->name('pricing');
 Route::view('/promo', 'pages.promo')->name('promo');

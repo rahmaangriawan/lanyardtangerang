@@ -104,6 +104,21 @@
       </div>
       @endforeach
     </div>
+
+    @if($cityPages->isNotEmpty())
+      <div class="mt-12 border-t border-slate-200 pt-10">
+        <h2 class="text-2xl font-bold text-slate-900">Halaman Layanan per Kota</h2>
+        <p class="mt-2 text-slate-600">Pilih kota untuk melihat informasi layanan dan pemesanan yang lebih spesifik.</p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          @foreach($cityPages as $cityPage)
+            <a href="{{ route('area.show', $cityPage->slug) }}" class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-500 hover:text-slate-950">
+              <span class="material-symbols-outlined text-base" aria-hidden="true">location_on</span>
+              {{ $cityPage->title }}
+            </a>
+          @endforeach
+        </div>
+      </div>
+    @endif
   </div>
 </section>
 

@@ -33,8 +33,13 @@ class PublicRedirectUrl
 
     private const PROTECTED_EXACT_PATHS = [
         '/favicon.ico',
+        '/city-sitemap.xml',
+        '/page-sitemap.xml',
+        '/post-sitemap.xml',
+        '/product-sitemap.xml',
         '/robots.txt',
         '/sitemap.xml',
+        '/sitemap.xsl',
         '/up',
     ];
 
