@@ -37,7 +37,9 @@ class SitemapTest extends TestCase
             ->assertOk()
             ->assertSee('/produk')
             ->assertSee('/cara-pemesanan')
-            ->assertSee('/blog');
+            ->assertSee('/blog')
+            ->assertDontSee('/kebijakan')
+            ->assertDontSee('/syarat-ketentuan');
     }
 
     public function test_product_and_post_sitemaps_only_include_published_content(): void

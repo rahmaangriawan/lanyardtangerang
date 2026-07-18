@@ -263,7 +263,7 @@
           <div class="flex flex-col sm:flex-row items-start gap-5 bg-slate-50 border border-slate-200 rounded-2xl p-6 sm:p-8">
             <a href="/blog/penulis/{{ $authorSlug }}" class="shrink-0 group/a" aria-label="Lihat semua artikel oleh {{ $authorDisplayName }}">
               @if($authorAvatarUrl)
-                <img src="{{ $authorAvatarUrl }}" alt="{{ $authorDisplayName }} — penulis Lanyard Tangerang" class="w-16 h-16 rounded-full object-cover shrink-0 bg-slate-100 transition-opacity group-hover/a:opacity-80" width="64" height="64" loading="lazy" />
+                <img src="{{ $authorAvatarUrl }}" alt="{{ $authorDisplayName }} — penulis Lanyard Tangerang" class="w-16 h-16 rounded-full object-cover shrink-0 bg-slate-100 transition-opacity group-hover/a:opacity-80" width="64" height="64" loading="lazy" decoding="async" />
               @else
                 <div class="w-16 h-16 rounded-full bg-slate-900 text-white text-xl font-bold flex items-center justify-center shrink-0 transition-opacity group-hover/a:opacity-80" aria-hidden="true">
                   {{ strtoupper(mb_substr($authorDisplayName, 0, 1)) }}
@@ -393,7 +393,7 @@
             <a href="/blog/{{ $related->slug }}" class="group/rel flex items-start gap-4">
               <div class="w-[72px] h-[54px] shrink-0 rounded-xl overflow-hidden bg-slate-200">
                 @if($relImg)
-                <img src="{{ $relImg }}" alt="{{ $related->title }} - panduan lanyard custom Tangerang" class="w-full h-full object-cover group-hover/rel:scale-105 transition-transform duration-300" loading="lazy" width="72" height="54" />
+                <img src="{{ $relImg }}" alt="{{ $related->title }} - panduan lanyard custom Tangerang" class="w-full h-full object-cover group-hover/rel:scale-105 transition-transform duration-300" loading="lazy" decoding="async" width="72" height="54" />
                 @else
                 <div class="w-full h-full flex items-center justify-center">
                   <span class="material-symbols-outlined text-slate-300 text-xl">article</span>

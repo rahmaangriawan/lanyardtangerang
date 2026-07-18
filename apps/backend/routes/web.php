@@ -147,8 +147,6 @@ Route::get('/page-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapRespon
         ['loc' => $base.'/daftar-harga', 'changefreq' => 'weekly', 'priority' => '0.8'],
         ['loc' => $base.'/promo', 'changefreq' => 'weekly', 'priority' => '0.7'],
         ['loc' => $base.'/pengiriman', 'changefreq' => 'monthly', 'priority' => '0.6'],
-        ['loc' => $base.'/kebijakan', 'changefreq' => 'yearly', 'priority' => '0.3'],
-        ['loc' => $base.'/syarat-ketentuan', 'changefreq' => 'yearly', 'priority' => '0.3'],
         ['loc' => $base.'/blog', 'changefreq' => 'daily', 'priority' => '0.8'],
     ])->all();
 

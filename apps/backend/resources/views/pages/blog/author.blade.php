@@ -8,6 +8,9 @@
 @section('meta_description', 'Lihat semua artikel yang ditulis oleh ' . $displayName . ' di blog Lanyard Tangerang. Tips desain lanyard custom, branding, event & panduan produksi Tangerang.')
 @section('seo_canonical', config('app.url') . '/blog/penulis/' . $authorSlug)
 @section('seo_og_image', $author->avatar ?: '/uploads/lanyardtangerang-logo.webp')
+@if(request()->integer('page', 1) > 1)
+  @section('seo_noindex', '1')
+@endif
 
 @push('schema')
   @include('components.schema.author')
@@ -39,7 +42,7 @@
       {{-- Avatar --}}
       <div class="mb-4">
         @if($author->avatar)
-        <img src="{{ $img($author->avatar) }}" alt="{{ $displayName }} — penulis Lanyard Tangerang" class="rounded-full object-cover mx-auto bg-slate-100 shadow-sm" style="width: 80px; height: 80px;" width="80" height="80" loading="lazy" />
+        <img src="{{ $img($author->avatar) }}" alt="{{ $displayName }} — penulis Lanyard Tangerang" class="rounded-full object-cover mx-auto bg-slate-100 shadow-sm" style="width: 80px; height: 80px;" width="80" height="80" loading="lazy" decoding="async" />
         @else
         <div class="rounded-full bg-slate-900 text-white text-2xl font-bold flex items-center justify-center mx-auto shadow-sm select-none" aria-hidden="true" style="width: 80px; height: 80px;">
           {{ strtoupper(mb_substr($displayName, 0, 1)) }}

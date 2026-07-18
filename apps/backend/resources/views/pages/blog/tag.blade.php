@@ -4,6 +4,9 @@
 @section('meta_description', 'Kumpulan artikel dengan tag ' . strtolower($tagName) . ' di Lanyard Tangerang. Temukan panduan, tips, dan insight terbaik dari tim kami.')
 @section('seo_type', 'website')
 @section('seo_og_image', '/uploads/lanyardtangerang-logo.webp')
+@if(request()->integer('page', 1) > 1)
+  @section('seo_noindex', '1')
+@endif
 
 @section('content')
 @php
