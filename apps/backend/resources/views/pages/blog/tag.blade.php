@@ -86,7 +86,7 @@
         <div class="mt-5 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             @if($post->author && $post->author->avatar)
-            <img src="{{ $img($post->author->avatar) }}" alt="{{ $post->author->name }}" class="h-[30px] w-[30px] rounded-full object-cover shadow-sm bg-slate-100" width="30" height="30" />
+            <img src="{{ $img($post->author->avatar) }}" alt="{{ $post->author->name }}" class="h-[30px] w-[30px] rounded-full object-cover shadow-sm bg-slate-100" width="30" height="30" loading="lazy" decoding="async" />
             @else
             <div class="grid h-[30px] w-[30px] place-items-center rounded-full bg-slate-800 text-[11px] font-extrabold text-white shadow-sm">
               {{ strtoupper(substr($post->author->name ?? 'Admin', 0, 1)) }}

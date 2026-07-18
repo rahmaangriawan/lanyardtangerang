@@ -1,22 +1,22 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Cms\CmsResourceController;
 use App\Http\Controllers\Cms\DashboardController;
-use App\Http\Controllers\Cms\UtilityPageController;
 use App\Http\Controllers\Cms\ProductSyncController;
+use App\Http\Controllers\Cms\UtilityPageController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\AuthorSlugRedirect;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\User;
-use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
-use Illuminate\Http\Request;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
@@ -25,14 +25,14 @@ use Illuminate\Support\Str;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 $serveLegacyPublicAsset = function (string $directory, string $path) {
-    $rootPublic = dirname(base_path(), 2) . DIRECTORY_SEPARATOR . 'public';
+    $rootPublic = dirname(base_path(), 2).DIRECTORY_SEPARATOR.'public';
     $bases = array_filter(array_unique([
         realpath(public_path($directory)),
-        realpath($rootPublic . DIRECTORY_SEPARATOR . $directory),
+        realpath($rootPublic.DIRECTORY_SEPARATOR.$directory),
     ]));
 
     foreach ($bases as $base) {
-        $file = realpath($base . DIRECTORY_SEPARATOR . $path);
+        $file = realpath($base.DIRECTORY_SEPARATOR.$path);
 
         if ($file && str_starts_with($file, $base) && is_file($file)) {
             $imageInfo = @getimagesize($file);
@@ -51,14 +51,14 @@ $serveLegacyPublicAsset = function (string $directory, string $path) {
 };
 
 $serveStorageAsset = function (string $path) {
-    $rootPublic = dirname(base_path(), 2) . DIRECTORY_SEPARATOR . 'public';
+    $rootPublic = dirname(base_path(), 2).DIRECTORY_SEPARATOR.'public';
     $bases = array_filter([
         realpath(storage_path('app/public')),
-        realpath($rootPublic . DIRECTORY_SEPARATOR . 'storage'),
+        realpath($rootPublic.DIRECTORY_SEPARATOR.'storage'),
     ]);
 
     foreach ($bases as $base) {
-        $file = realpath($base . DIRECTORY_SEPARATOR . $path);
+        $file = realpath($base.DIRECTORY_SEPARATOR.$path);
 
         if ($file && str_starts_with($file, $base) && is_file($file)) {
             return response()->file($file, [
@@ -101,6 +101,85 @@ Route::get('/font-assets/{font}', function (string $font) {
         'Cache-Control' => 'public, max-age=31536000, immutable',
     ]);
 })->where('font', '[a-z0-9-]+')->withoutMiddleware($statelessPublicMiddleware)->name('assets.fonts');
+
+$sitemapResponse = static function (array $urls) {
+    return response()
+        ->view('components.sitemap', compact('urls'))
+        ->header('Content-Type', 'application/xml; charset=UTF-8')
+        ->header('Cache-Control', 'public, max-age=3600, must-revalidate');
+};
+
+$sitemapBaseUrl = static function (): string {
+    $base = rtrim((string) config('app.url', url('/')), '/');
+
+    return $base !== '' ? $base : url('/');
+};
+
+Route::get('/sitemap.xml', function () use ($sitemapBaseUrl) {
+    $base = $sitemapBaseUrl();
+    $sitemaps = [
+        ['loc' => $base.'/page-sitemap.xml', 'label' => 'Halaman utama'],
+        ['loc' => $base.'/product-sitemap.xml', 'label' => 'Produk'],
+        ['loc' => $base.'/post-sitemap.xml', 'label' => 'Artikel blog'],
+    ];
+
+    return response()
+        ->view('components.sitemap-index', compact('sitemaps'))
+        ->header('Content-Type', 'application/xml; charset=UTF-8')
+        ->header('Cache-Control', 'public, max-age=3600, must-revalidate');
+})->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.index');
+
+Route::get('/page-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse) {
+    $base = $sitemapBaseUrl();
+    $urls = collect([
+        ['loc' => $base.'/', 'changefreq' => 'weekly', 'priority' => '1.0'],
+        ['loc' => $base.'/produk', 'changefreq' => 'weekly', 'priority' => '0.9'],
+        ['loc' => $base.'/area', 'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => $base.'/cara-pemesanan', 'changefreq' => 'monthly', 'priority' => '0.7'],
+        ['loc' => $base.'/daftar-harga', 'changefreq' => 'weekly', 'priority' => '0.8'],
+        ['loc' => $base.'/promo', 'changefreq' => 'weekly', 'priority' => '0.7'],
+        ['loc' => $base.'/pengiriman', 'changefreq' => 'monthly', 'priority' => '0.6'],
+        ['loc' => $base.'/kebijakan', 'changefreq' => 'yearly', 'priority' => '0.3'],
+        ['loc' => $base.'/syarat-ketentuan', 'changefreq' => 'yearly', 'priority' => '0.3'],
+        ['loc' => $base.'/blog', 'changefreq' => 'daily', 'priority' => '0.8'],
+    ])->all();
+
+    return $sitemapResponse($urls);
+})->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.pages');
+
+Route::get('/product-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse) {
+    $base = $sitemapBaseUrl();
+    $urls = Product::query()
+        ->where('published', true)
+        ->orderByDesc('updatedAt')
+        ->get(['slug', 'updatedAt'])
+        ->map(fn (Product $product): array => [
+            'loc' => $base.'/produk/'.$product->slug,
+            'lastmod' => $product->updatedAt,
+            'changefreq' => 'weekly',
+            'priority' => '0.7',
+        ])
+        ->all();
+
+    return $sitemapResponse($urls);
+})->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.products');
+
+Route::get('/post-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse) {
+    $base = $sitemapBaseUrl();
+    $urls = Post::query()
+        ->where('published', true)
+        ->orderByDesc('updatedAt')
+        ->get(['slug', 'updatedAt'])
+        ->map(fn (Post $post): array => [
+            'loc' => $base.'/blog/'.$post->slug,
+            'lastmod' => $post->updatedAt,
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+        ])
+        ->all();
+
+    return $sitemapResponse($urls);
+})->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.posts');
 
 Route::get('/media/{path}', fn (string $path) => $serveLegacyPublicAsset('media', $path))->where('path', '.*');
 Route::get('/uploads/{path}', fn (string $path) => $serveLegacyPublicAsset('uploads', $path))->where('path', '.*');

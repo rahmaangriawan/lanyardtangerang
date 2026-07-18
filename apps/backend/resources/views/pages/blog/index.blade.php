@@ -7,18 +7,21 @@
   use App\Models\Post;
   use Illuminate\Support\Facades\Cache;
 
-  $search = request('q');
+  $search = mb_substr(trim((string) request('q', '')), 0, 255);
+  $escapedSearch = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
   $page = max(1, (int) request('page', 1));
   $perPage = 9;
 
   $query = Post::with('category', 'author')
     ->where('published', true);
 
-  if ($search) {
-    $query->where(function ($q) use ($search) {
-      $q->where('title', 'like', "%{$search}%")
-        ->orWhere('metaDescription', 'like', "%{$search}%")
-        ->orWhere('content', 'like', "%{$search}%");
+  if ($search !== '') {
+    $query->where(function ($q) use ($escapedSearch) {
+      $term = "%{$escapedSearch}%";
+
+      $q->whereRaw("title LIKE ? ESCAPE '!'", [$term])
+        ->orWhereRaw("metaDescription LIKE ? ESCAPE '!'", [$term])
+        ->orWhereRaw("content LIKE ? ESCAPE '!'", [$term]);
     });
   }
 
@@ -134,6 +137,7 @@
         type="search"
         name="q"
         value="{{ $search }}"
+        maxlength="255"
         placeholder="Cari artikel..."
         autocomplete="off"
       />
@@ -178,7 +182,7 @@
         {{-- Image --}}
         <a href="/blog/{{ $post->slug }}" class="overflow-hidden rounded-[14px] bg-slate-100 block">
           @if($post->featuredImage)
-          <img class="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-[1.03]" src="{{ $img($post->featuredImage) }}" alt="{{ $post->title }}" loading="lazy" decoding="async" />
+          <img class="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-[1.03]" src="{{ $img($post->featuredImage) }}" alt="{{ $post->title }}" loading="lazy" decoding="async" width="360" height="270" />
           @else
           <div class="aspect-[4/3] w-full bg-slate-200 group-hover:scale-[1.03] transition-transform duration-500 flex items-center justify-center">
             <span class="material-symbols-outlined text-5xl text-slate-300">article</span>
@@ -190,7 +194,7 @@
         <div class="mt-5 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             @if($post->author && $post->author->avatar)
-            <img src="{{ $img($post->author->avatar) }}" alt="{{ $post->author->name }}" class="h-[30px] w-[30px] rounded-full object-cover shadow-sm bg-slate-100" />
+            <img src="{{ $img($post->author->avatar) }}" alt="{{ $post->author->name }}" class="h-[30px] w-[30px] rounded-full object-cover shadow-sm bg-slate-100" width="30" height="30" loading="lazy" decoding="async" />
             @else
             <div class="grid h-[30px] w-[30px] place-items-center rounded-full bg-slate-800 text-[11px] font-extrabold text-white shadow-sm">
               {{ strtoupper(substr($post->author->name ?? 'Admin', 0, 1)) }}

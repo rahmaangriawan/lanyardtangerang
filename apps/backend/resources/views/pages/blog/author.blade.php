@@ -76,7 +76,7 @@
         <a href="/blog/{{ $post->slug }}" class="group/p flex flex-col h-full bg-white rounded-2xl border border-slate-200/60 overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1">
           <div class="aspect-[16/10] w-full bg-slate-100 overflow-hidden">
             @if($thumb)
-            <img src="{{ $thumb }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover/p:scale-105 transition-transform duration-500" loading="lazy" />
+            <img src="{{ $thumb }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover/p:scale-105 transition-transform duration-500" loading="lazy" decoding="async" width="400" height="250" />
             @else
             <div class="w-full h-full bg-slate-50"></div>
             @endif
