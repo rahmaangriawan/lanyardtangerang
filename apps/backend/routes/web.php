@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
@@ -116,6 +117,11 @@ $sitemapBaseUrl = static function (): string {
     return $base !== '' ? $base : url('/');
 };
 
+$cachedSitemapUrls = static function (string $key, callable $resolver): array {
+    return Cache::store(config('cache.public_store', 'file'))
+        ->remember($key, now()->addHour(), $resolver);
+};
+
 Route::get('/sitemap.xml', function () use ($sitemapBaseUrl) {
     $base = $sitemapBaseUrl();
     $sitemaps = [
@@ -149,53 +155,59 @@ Route::get('/page-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapRespon
     return $sitemapResponse($urls);
 })->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.pages');
 
-Route::get('/product-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse) {
+Route::get('/product-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse, $cachedSitemapUrls) {
     $base = $sitemapBaseUrl();
-    $urls = Product::query()
-        ->where('published', true)
-        ->orderByDesc('updatedAt')
-        ->get(['slug', 'updatedAt'])
-        ->map(fn (Product $product): array => [
-            'loc' => $base.'/produk/'.$product->slug,
-            'lastmod' => $product->updatedAt,
-            'changefreq' => 'weekly',
-            'priority' => '0.7',
-        ])
-        ->all();
+    $urls = $cachedSitemapUrls('public_sitemap_products', function () use ($base): array {
+        return Product::query()
+            ->where('published', true)
+            ->orderByDesc('updatedAt')
+            ->get(['slug', 'updatedAt'])
+            ->map(fn (Product $product): array => [
+                'loc' => $base.'/produk/'.$product->slug,
+                'lastmod' => $product->updatedAt,
+                'changefreq' => 'weekly',
+                'priority' => '0.7',
+            ])
+            ->all();
+    });
 
     return $sitemapResponse($urls);
 })->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.products');
 
-Route::get('/post-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse) {
+Route::get('/post-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse, $cachedSitemapUrls) {
     $base = $sitemapBaseUrl();
-    $urls = Post::query()
-        ->where('published', true)
-        ->orderByDesc('updatedAt')
-        ->get(['slug', 'updatedAt'])
-        ->map(fn (Post $post): array => [
-            'loc' => $base.'/blog/'.$post->slug,
-            'lastmod' => $post->updatedAt,
-            'changefreq' => 'weekly',
-            'priority' => '0.8',
-        ])
-        ->all();
+    $urls = $cachedSitemapUrls('public_sitemap_posts', function () use ($base): array {
+        return Post::query()
+            ->where('published', true)
+            ->orderByDesc('updatedAt')
+            ->get(['slug', 'updatedAt'])
+            ->map(fn (Post $post): array => [
+                'loc' => $base.'/blog/'.$post->slug,
+                'lastmod' => $post->updatedAt,
+                'changefreq' => 'weekly',
+                'priority' => '0.8',
+            ])
+            ->all();
+    });
 
     return $sitemapResponse($urls);
 })->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.posts');
 
-Route::get('/city-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse) {
+Route::get('/city-sitemap.xml', function () use ($sitemapBaseUrl, $sitemapResponse, $cachedSitemapUrls) {
     $base = $sitemapBaseUrl();
-    $urls = CityPage::query()
-        ->where('published', true)
-        ->orderByDesc('updatedAt')
-        ->get(['slug', 'updatedAt'])
-        ->map(fn (CityPage $cityPage): array => [
-            'loc' => $base.'/area/'.$cityPage->slug,
-            'lastmod' => $cityPage->updatedAt,
-            'changefreq' => 'monthly',
-            'priority' => '0.7',
-        ])
-        ->all();
+    $urls = $cachedSitemapUrls('public_sitemap_cities', function () use ($base): array {
+        return CityPage::query()
+            ->where('published', true)
+            ->orderByDesc('updatedAt')
+            ->get(['slug', 'updatedAt'])
+            ->map(fn (CityPage $cityPage): array => [
+                'loc' => $base.'/area/'.$cityPage->slug,
+                'lastmod' => $cityPage->updatedAt,
+                'changefreq' => 'monthly',
+                'priority' => '0.7',
+            ])
+            ->all();
+    });
 
     return $sitemapResponse($urls);
 })->withoutMiddleware($statelessPublicMiddleware)->name('sitemap.cities');

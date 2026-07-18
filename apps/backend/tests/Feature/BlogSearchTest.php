@@ -29,7 +29,13 @@ class BlogSearchTest extends TestCase
 
         $this->get('/blog?q=promo_2026')
             ->assertOk()
+            ->assertSee('noindex, follow')
             ->assertSee('Promo_2026 Resmi')
             ->assertDontSee('Promoa2026 Berbeda');
+    }
+
+    public function test_paginated_blog_page_is_not_indexable(): void
+    {
+        $this->get('/blog?page=2')->assertOk()->assertSee('noindex, follow');
     }
 }

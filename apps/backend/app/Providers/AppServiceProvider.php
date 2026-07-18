@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\CityPage;
 use App\Models\Post;
 use App\Models\Product;
 use App\Models\Setting;
+use App\Observers\CityPageObserver;
 use App\Observers\PostObserver;
 use App\Observers\ProductObserver;
 use App\Observers\SettingObserver;
@@ -28,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Product::observe(ProductObserver::class);
         Post::observe(PostObserver::class);
+        CityPage::observe(CityPageObserver::class);
         Setting::observe(SettingObserver::class);
 
         Vite::prefetch(concurrency: 3);

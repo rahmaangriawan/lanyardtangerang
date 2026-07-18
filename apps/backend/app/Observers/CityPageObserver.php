@@ -3,11 +3,13 @@
 namespace App\Observers;
 
 use App\Models\CityPage;
+use Illuminate\Support\Facades\Cache;
+
 class CityPageObserver
 {
     private function clearCache(): void
     {
-        // No city-page runtime cache currently depends on this model.
+        Cache::store(config('cache.public_store', 'file'))->forget('public_sitemap_cities');
     }
 
     /**

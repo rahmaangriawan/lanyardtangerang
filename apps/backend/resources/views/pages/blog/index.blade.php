@@ -2,6 +2,10 @@
 
 @section('title', 'Blog Lanyard Tangerang — Tips, Insight & Update')
 
+@if(request()->filled('q') || request()->integer('page', 1) > 1)
+  @section('seo_noindex', '1')
+@endif
+
 @section('content')
 @php
   use App\Models\Post;
@@ -193,7 +197,7 @@
         {{-- Meta Row: Author Avatar, Name, Date, Reading Time --}}
         <div class="mt-5 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            @if($post->author && $post->author->avatar)
+            @if(!empty($post->author->avatar))
             <img src="{{ $img($post->author->avatar) }}" alt="{{ $post->author->name }}" class="h-[30px] w-[30px] rounded-full object-cover shadow-sm bg-slate-100" width="30" height="30" loading="lazy" decoding="async" />
             @else
             <div class="grid h-[30px] w-[30px] place-items-center rounded-full bg-slate-800 text-[11px] font-extrabold text-white shadow-sm">

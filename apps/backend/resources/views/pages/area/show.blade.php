@@ -14,7 +14,16 @@
         <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
         Semua area layanan
       </a>
-      <p class="mt-8 text-xs font-extrabold uppercase tracking-normal text-slate-600">Area layanan</p>
+      <nav class="mt-8 text-sm text-slate-500" aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center gap-2">
+          <li><a href="{{ route('home') }}" class="hover:text-slate-900">Beranda</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="{{ route('area') }}" class="hover:text-slate-900">Area Layanan</a></li>
+          <li aria-hidden="true">/</li>
+          <li class="font-medium text-slate-700" aria-current="page">{{ $cityPage->title }}</li>
+        </ol>
+      </nav>
+      <p class="mt-6 text-xs font-extrabold uppercase tracking-normal text-slate-600">Area layanan</p>
       <h1 class="mt-4 font-bold leading-[1.08] text-slate-900" style="font-size: clamp(2rem, 4vw, 3.25rem);">{{ $cityPage->title }}</h1>
       <p class="mt-5 max-w-2xl text-base leading-7 text-slate-600">Layanan cetak lanyard custom untuk kebutuhan kantor, event, sekolah, dan komunitas di area ini.</p>
     </div>
@@ -33,4 +42,7 @@
 
   @include('components.cta')
   @include('components.footer')
+  @push('schema')
+    @include('components.schema.city-page')
+  @endpush
 @endsection

@@ -6,11 +6,18 @@ use App\Models\CityPage;
 use App\Models\Post;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SitemapTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['cache.public_store' => 'array']);
+    }
 
     public function test_sitemap_index_lists_clickable_category_sitemaps(): void
     {
@@ -60,7 +67,27 @@ class SitemapTest extends TestCase
         ]);
 
         $this->get('/city-sitemap.xml')->assertOk()->assertSee('/area/tangerang-selatan')->assertDontSee('/area/kota-draft');
-        $this->get('/area/tangerang-selatan')->assertOk()->assertSee('Layanan Tangerang Selatan.');
+        $this->get('/area/tangerang-selatan')
+            ->assertOk()
+            ->assertSee('Layanan Tangerang Selatan.')
+            ->assertSee('BreadcrumbList')
+            ->assertSee('Cetak Lanyard Custom Lanyard Tangerang Selatan');
         $this->get('/area/kota-draft')->assertNotFound();
+    }
+
+    public function test_content_observers_invalidate_their_sitemap_cache(): void
+    {
+        $cache = Cache::store('array');
+        $cache->put('public_sitemap_products', 'cached');
+        $cache->put('public_sitemap_posts', 'cached');
+        $cache->put('public_sitemap_cities', 'cached');
+
+        Product::query()->create(['sku' => 'CACHE-1', 'name' => 'Produk', 'slug' => 'produk-cache']);
+        Post::query()->create(['title' => 'Post', 'slug' => 'post-cache', 'content' => 'Isi']);
+        CityPage::query()->create(['title' => 'Kota', 'slug' => 'kota-cache', 'content' => 'Isi']);
+
+        $this->assertFalse($cache->has('public_sitemap_products'));
+        $this->assertFalse($cache->has('public_sitemap_posts'));
+        $this->assertFalse($cache->has('public_sitemap_cities'));
     }
 }

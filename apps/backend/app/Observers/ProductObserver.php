@@ -9,7 +9,9 @@ class ProductObserver
 {
     private function clearCache(): void
     {
-        Cache::store(config('cache.public_store', 'file'))->forget('home_products');
+        $cache = Cache::store(config('cache.public_store', 'file'));
+        $cache->forget('home_products');
+        $cache->forget('public_sitemap_products');
     }
 
     /**

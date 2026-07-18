@@ -9,7 +9,9 @@ class PostObserver
 {
     private function clearCache(): void
     {
-        Cache::store(config('cache.public_store', 'file'))->forget('home_posts');
+        $cache = Cache::store(config('cache.public_store', 'file'));
+        $cache->forget('home_posts');
+        $cache->forget('public_sitemap_posts');
     }
 
     /**
