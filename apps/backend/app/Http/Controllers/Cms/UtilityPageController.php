@@ -110,13 +110,14 @@ class UtilityPageController extends Controller
     public function notFoundReport(Request $request): View
     {
         $days = in_array($request->integer('days'), [7, 30, 90], true) ? $request->integer('days') : 30;
-        $search = trim((string) $request->query('q', ''));
+        $search = mb_substr(trim((string) $request->query('q', '')), 0, 512);
+        $escapedSearch = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search);
         $from = now()->subDays($days - 1)->toDateString();
 
         $items = NotFoundUrl::query()
             ->selectRaw('path, SUM(occurrences) as occurrences, MIN(firstSeenAt) as firstSeenAt, MAX(lastSeenAt) as lastSeenAt')
             ->where('reportDate', '>=', $from)
-            ->when($search !== '', fn ($query) => $query->where('path', 'like', "%{$search}%"))
+            ->when($search !== '', fn ($query) => $query->whereRaw("path LIKE ? ESCAPE '!'", ["%{$escapedSearch}%"]))
             ->groupBy('path')
             ->orderByDesc('occurrences')
             ->orderByDesc('lastSeenAt')

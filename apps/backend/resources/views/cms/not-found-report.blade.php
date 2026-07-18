@@ -86,7 +86,7 @@
             </div>
             <div>
               <label class="form-label" for="q">Cari URL</label>
-              <input id="q" class="input" type="search" name="q" value="{{ $search }}" placeholder="Contoh: /blog/artikel-lama" />
+              <input id="q" class="input" type="search" name="q" value="{{ $search }}" maxlength="512" placeholder="Contoh: /blog/artikel-lama" />
             </div>
             <button class="button button--primary" type="submit">Terapkan</button>
           </form>

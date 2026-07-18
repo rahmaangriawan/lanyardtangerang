@@ -100,6 +100,28 @@ class PublicNotFoundTest extends TestCase
             ->assertSee('value="/artikel-lama"', false);
     }
 
+    public function test_admin_report_search_treats_sql_wildcards_as_literal_url_characters(): void
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+
+        foreach (['/promo_2026', '/promoa2026', '/diskon%akhir'] as $path) {
+            NotFoundUrl::query()->create([
+                'path' => $path,
+                'reportDate' => now()->toDateString(),
+                'occurrences' => 1,
+                'firstSeenAt' => now(),
+                'lastSeenAt' => now(),
+            ]);
+        }
+
+        $this->actingAs($admin)
+            ->get('/kawruh/not-found-urls?q=promo_2026')
+            ->assertOk()
+            ->assertSee('/promo_2026')
+            ->assertDontSee('/promoa2026')
+            ->assertDontSee('/diskon%akhir');
+    }
+
     public function test_old_records_are_pruned_when_a_new_public_404_is_recorded(): void
     {
         $old = NotFoundUrl::query()->create([
